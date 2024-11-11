@@ -13,22 +13,22 @@ alphas = compute_alphas(betas)
 
 T = 1000
 
-
 def add_noise(x_0, alpha_hat_t):
     """
-    Add gaussian noise to an image tensor,
-    given alpha as the noise level
+    Add Gaussian noise to an image tensor,
+    given alpha as the noise level using PyTorch.
     """
 
-    alpha_hat_t = alpha_hat_t.reshape(-1, 1, 1, 1)
+    # Reshape alpha_hat_t to match the dimensions of x_0 for broadcasting
+    alpha_hat_t = alpha_hat_t.view(-1, 1, 1, 1)
 
-    noise = t.randn_like(x_0) * np.square(1-alpha_hat_t)
-    noise += np.square(alpha_hat_t)
+    # Generate Gaussian noise with the same shape as x_0
+    noise = t.randn_like(x_0) * t.square(1 - alpha_hat_t)
+    noise += t.square(alpha_hat_t)
 
-    # x_0 shape : (batch, ch, 28, 28)
-    # alpha_hat_t shape : (batch)
-
+    # Return the image tensor with added noise
     return x_0 + noise
+
 
 def sample_tS(T, size):
     """
@@ -89,10 +89,11 @@ class DdpmLight(L.LightningModule):
 
         alpha_hat = alphas_hat[ts]
 
-        noised_x = add_noise(x, alpha_hat)
+        noised_x = add_noise(x, t.from_numpy(alpha_hat).cuda())
 
         flat_noised_x = noised_x.view(bs, -1).float()
-        flat_ts = ts.view(bs, -1).float()
+        flat_ts = ts.view(bs, -1).float().cuda()
+
 
         prediction = self.ddpmnet(flat_noised_x, flat_ts)
 
