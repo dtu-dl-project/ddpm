@@ -9,7 +9,7 @@ from torch.utils.data import DataLoader
 from ddpm_model import DdpmLight,DdpmNet
 import lightning as L
 
-
+device = T.device("cuda" if T.cuda.is_available() else "cpu")
 
 transform = transforms.Compose([
     transforms.ToTensor(),
@@ -19,12 +19,12 @@ transform = transforms.Compose([
 mnist_train = datasets.MNIST(root="mnist_data", train=True, transform=transform, download=True)
 mnist_test = datasets.MNIST(root="mnist_data", train=False, transform=transform, download=True)
 
-
 train_dataloader = DataLoader(mnist_train, batch_size=100, shuffle=True)
 test_dataloader = DataLoader(mnist_test, batch_size=100, shuffle=False)
 
+model = DdpmNet().to(device)
 
-ddpm_light = DdpmLight(DdpmNet())
+ddpm_light = DdpmLight(model)
 
 trainer = L.Trainer(limit_train_batches=100, max_epochs=1)
 trainer.fit(model=ddpm_light, train_dataloaders=train_dataloader)

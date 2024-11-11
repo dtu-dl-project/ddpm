@@ -51,6 +51,9 @@ class DdpmLight(L.LightningModule):
 
     def training_step(self, batch, batch_idx):
         x, _ = batch
+
+        x = x.to(self.device)
+
         bs = x.size(0)
 
         ts = sample_tS(1000, size=(bs,))
