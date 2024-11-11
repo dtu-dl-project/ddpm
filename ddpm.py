@@ -1,3 +1,4 @@
+from lightning.pytorch.callbacks import ModelCheckpoint
 import torch as T
 import torch.nn as nn
 import torch.nn.functional as F
@@ -34,7 +35,9 @@ model = DdpmNet().to(device)
 
 ddpm_light = DdpmLight(model).to(device)
 
-trainer = L.Trainer(max_epochs=10)
+checkpoint_callback = ModelCheckpoint(dirpath="ckpt", save_top_k=3, monitor="val_loss")
+
+trainer = L.Trainer(max_epochs=100, callbacks=checkpoint_callback)
 trainer.fit(model=ddpm_light, train_dataloaders=train_dataloader, val_dataloaders=val_dataloader)
 
 #ddpm_light = DdpmLight.load_from_checkpoint("model.ckpt", ddpmnet=model)
