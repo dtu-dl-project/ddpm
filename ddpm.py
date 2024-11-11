@@ -35,7 +35,7 @@ model = DdpmNet().to(device)
 
 ddpm_light = DdpmLight(model).to(device)
 
-checkpoint_callback = ModelCheckpoint(dirpath="ckpt", save_top_k=3, monitor="val_loss")
+checkpoint_callback = ModelCheckpoint(dirpath="ckpt", save_top_k=3, monitor="val_loss", filename="{epoch}-{val_loss:.2f}")
 
 trainer = L.Trainer(max_epochs=100, callbacks=checkpoint_callback)
 trainer.fit(model=ddpm_light, train_dataloaders=train_dataloader, val_dataloaders=val_dataloader)
