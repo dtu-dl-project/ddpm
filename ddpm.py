@@ -24,7 +24,12 @@ test_dataloader = DataLoader(mnist_test, batch_size=100, shuffle=False)
 
 model = DdpmNet().to(device)
 
-ddpm_light = DdpmLight(model)
+ddpm_light = DdpmLight.load_from_checkpoint("model.ckpt", ddpmnet=model)
 
-trainer = L.Trainer(limit_train_batches=100, max_epochs=1)
-trainer.fit(model=ddpm_light, train_dataloaders=train_dataloader)
+s = ddpm_light.sample(1)[0].view(28, 28, 1)
+
+plt.imshow(s.cpu().detach().numpy(), cmap="gray")
+plt.savefig("sample.png")
+
+# trainer = L.Trainer(limit_train_batches=100, max_epochs=1)
+# trainer.fit(model=ddpm_light, train_dataloaders=train_dataloader)

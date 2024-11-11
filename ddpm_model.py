@@ -5,10 +5,13 @@ import lightning as L
 import numpy as np
 import torch.nn.functional as F
 
-from betaschedule import betaschedule, compute_alphas
+from betaschedule import betaschedule, compute_alphas, compute_alphas_hat
 
 betas = betaschedule()
+alphas_hat = compute_alphas_hat(betas)
 alphas = compute_alphas(betas)
+
+T = 1000
 
 
 def add_noise(x_0, alpha_hat_t):
@@ -49,6 +52,32 @@ class DdpmLight(L.LightningModule):
         super().__init__()
         self.ddpmnet = ddpmnet
 
+    def sample(self, count):
+        x = t.rand(count, 1, 28, 28)
+        for i in reversed(range(T)):
+            x_prev = self.forward(x, t.tensor(i))
+            x = x_prev
+        return x
+
+    def forward(self, x, i):
+        bs = x.size(0)
+
+        alpha_t = alphas[i]
+        alpha_hat_t = alphas_hat[i]
+        beta_t = betas[i]
+
+        pred = self.ddpmnet(x.view(bs, -1), i.view(bs, -1))
+
+        pred = pred.view(bs, 1, 28, 28)
+
+        xt_prev = 1/(alpha_t**0.5)
+        xt_prev *= (x - (1-alpha_t)/((1-alpha_hat_t)**0.5) * pred)
+        if i > 0:
+            xt_prev += t.randn_like(x) * beta_t**0.5
+
+        return xt_prev
+
+
     def training_step(self, batch, batch_idx):
         x, _ = batch
 
@@ -56,9 +85,9 @@ class DdpmLight(L.LightningModule):
 
         bs = x.size(0)
 
-        ts = sample_tS(1000, size=(bs,))
+        ts = sample_tS(T, size=(bs,))
 
-        alphas_hat = alphas[ts]
+        alphas_hat = alphas_hat[ts]
 
         noised_x = add_noise(x, alphas_hat)
 

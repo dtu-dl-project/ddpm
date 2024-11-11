@@ -9,6 +9,11 @@ def betaschedule(min_beta=1e-4, max_beta=0.02, T=1000) -> np.ndarray:
 
 def compute_alphas(betas):
     alphas = 1 - betas
+
+    return alphas
+
+def compute_alphas_hat(betas):
+    alphas = 1 - betas
     alphas_hat = np.cumprod(alphas)
 
     return alphas_hat
