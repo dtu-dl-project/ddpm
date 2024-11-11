@@ -87,9 +87,9 @@ class DdpmLight(L.LightningModule):
 
         ts = sample_tS(T, size=(bs,))
 
-        alphas_hat = alphas_hat[ts]
+        alpha_hat = alphas_hat[ts]
 
-        noised_x = add_noise(x, alphas_hat)
+        noised_x = add_noise(x, alpha_hat)
 
         flat_noised_x = noised_x.view(bs, -1).float()
         flat_ts = ts.view(bs, -1).float()
