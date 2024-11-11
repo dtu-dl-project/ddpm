@@ -5,11 +5,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 from torchvision import datasets, transforms
 from torchvision.transforms import ToTensor
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, random_split
 from ddpm_model import DdpmLight,DdpmNet
 import lightning as L
 
 device = T.device("cuda" if T.cuda.is_available() else "cpu")
+
+batch_size = 64
 
 transform = transforms.Compose([
     transforms.ToTensor(),
@@ -19,15 +21,21 @@ transform = transforms.Compose([
 mnist_train = datasets.MNIST(root="mnist_data", train=True, transform=transform, download=True)
 mnist_test = datasets.MNIST(root="mnist_data", train=False, transform=transform, download=True)
 
-train_dataloader = DataLoader(mnist_train, batch_size=100, shuffle=True)
-test_dataloader = DataLoader(mnist_test, batch_size=100, shuffle=False)
+train_size = int(0.9 * len(mnist_train))
+val_size = len(mnist_train) - train_size
+
+train_dataset, val_dataset = random_split(mnist_train, [train_size, val_size])
+
+train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+val_dataloader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
+test_dataloader = DataLoader(mnist_test, batch_size=batch_size, shuffle=False)
 
 model = DdpmNet().to(device)
 
 ddpm_light = DdpmLight(model).to(device)
 
-trainer = L.Trainer(limit_train_batches=100, max_epochs=1)
-trainer.fit(model=ddpm_light, train_dataloaders=train_dataloader)
+trainer = L.Trainer(max_epochs=10)
+trainer.fit(model=ddpm_light, train_dataloaders=train_dataloader, val_dataloaders=val_dataloader)
 
 #ddpm_light = DdpmLight.load_from_checkpoint("model.ckpt", ddpmnet=model)
 

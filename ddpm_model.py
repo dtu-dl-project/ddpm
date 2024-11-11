@@ -55,11 +55,11 @@ class DdpmLight(L.LightningModule):
     def sample(self, count):
         x = t.rand(count, 1, 28, 28)
         for i in reversed(range(T)):
-            x_prev = self.forward(x, t.tensor(i))
+            x_prev = self.forward_sample(x, t.tensor(i))
             x = x_prev
         return x
 
-    def forward(self, x, i):
+    def forward_sample(self, x, i):
         bs = x.size(0)
 
         alpha_t = alphas[i]
@@ -77,6 +77,7 @@ class DdpmLight(L.LightningModule):
 
         return xt_prev
 
+    # TODO deduplicate the code in these functions
 
     def training_step(self, batch, batch_idx):
         x, _ = batch
@@ -101,6 +102,31 @@ class DdpmLight(L.LightningModule):
         loss = F.l1_loss((noised_x-x).view(bs, -1), prediction)
         self.log("train_loss", loss, prog_bar=True, on_step=True, on_epoch=True)
         return loss
+
+    def validation_step(self, batch, batch_idx):
+        x, _ = batch
+
+        x = x.to(self.device)
+
+        bs = x.size(0)
+
+        ts = sample_tS(T, size=(bs,))
+
+        alpha_hat = alphas_hat[ts]
+
+        noised_x = add_noise(x, t.from_numpy(alpha_hat).cuda())
+
+        flat_noised_x = noised_x.view(bs, -1).float()
+        flat_ts = ts.view(bs, -1).float().cuda()
+
+
+        prediction = self.ddpmnet(flat_noised_x, flat_ts)
+
+        # Compute l1 loss
+        loss = F.l1_loss((noised_x-x).view(bs, -1), prediction)
+        self.log("val_loss", loss, prog_bar=True, on_step=True, on_epoch=True)
+        return loss
+
 
     def configure_optimizers(self):
         return t.optim.Adam(self.parameters(), lr=1e-3)
