@@ -12,8 +12,6 @@ betas = betaschedule(1e-4, 0.02, T).to(device)
 alphas_hat = compute_alphas_hat(betas)
 alphas = compute_alphas(betas)
 
-print(betas.shape, alphas_hat.shape, alphas.shape)
-
 def add_noise(x_0, alpha_hat_t):
     """
     Add Gaussian noise to an image tensor,
@@ -54,17 +52,15 @@ class DdpmLight(L.LightningModule):
         self.ddpmnet = ddpmnet
 
     def sample(self, count):
-        x = t.rand(count, 1, 28, 28)
+        x = t.rand(count, 1, 28, 28).to(self.device)
         for i in reversed(range(T)):
-            self.forward_sample(x, i)
+            x = self.forward_sample(x, i)
         return x
 
     def forward_sample(self, x, int_i):
         bs = x.size(0)
 
         i = (t.ones(bs) * int_i).int()
-
-        x = x.to(self.device)
 
         i = i.to(self.device)
 
@@ -76,9 +72,11 @@ class DdpmLight(L.LightningModule):
 
         pred = pred.view(bs, 1, 28, 28)
 
-        x = (x - (1-alpha_t)/((1-alpha_hat_t)**0.5) * pred) * (1/(alpha_t**0.5))
+        prev = (x - (1-alpha_t)/((1-alpha_hat_t)**0.5) * pred) * (1/(alpha_t**0.5))
         if int_i > 0:
-            x += t.randn_like(x) * beta_t**0.5
+            prev += t.randn_like(x) * beta_t**0.5
+
+        return prev
 
     def step(self, batch, _):
         x, _ = batch
