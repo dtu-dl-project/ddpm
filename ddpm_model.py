@@ -2,16 +2,17 @@ import torch as t
 import torch.nn as nn
 from scorenetwork import ScoreNetwork0
 import lightning as L
-import numpy as np
 import torch.nn.functional as F
-
 from betaschedule import betaschedule, compute_alphas, compute_alphas_hat
 
-betas = betaschedule()
+T = 1000
+device = t.device('cuda' if t.cuda.is_available() else 'cpu')
+
+betas = betaschedule(1e-4, 0.02, T).to(device)
 alphas_hat = compute_alphas_hat(betas)
 alphas = compute_alphas(betas)
 
-T = 1000
+print(betas.shape, alphas_hat.shape, alphas.shape)
 
 def add_noise(x_0, alpha_hat_t):
     """
@@ -32,7 +33,7 @@ def add_noise(x_0, alpha_hat_t):
 
 def sample_tS(T, size):
     """
-    Sample a tensor of shape size with values from [0, T]
+    Sample a tensor of shape size with values from [0, T] inclusive
     """
 
     return t.randint(0, T, size=size)
@@ -77,53 +78,36 @@ class DdpmLight(L.LightningModule):
 
         return xt_prev
 
-    # TODO deduplicate the code in these functions
-
-    def training_step(self, batch, batch_idx):
+    def step(self, batch, _):
         x, _ = batch
 
         x = x.to(self.device)
 
         bs = x.size(0)
 
-        ts = sample_tS(T, size=(bs,))
+        ts = sample_tS(T, size=(bs,)).to(self.device)
 
         alpha_hat = alphas_hat[ts]
 
-        noised_x = add_noise(x, t.from_numpy(alpha_hat).cuda())
+        noised_x = add_noise(x, alpha_hat)
 
-        flat_noised_x = noised_x.view(bs, -1).float()
-        flat_ts = ts.view(bs, -1).float().cuda()
-
+        # These are being flattened because
+        # the score network expects a (bs, 784) tensor
+        flat_noised_x = noised_x.view(bs, -1)
+        flat_ts = ts.view(bs, -1)
 
         prediction = self.ddpmnet(flat_noised_x, flat_ts)
 
-        # Compute l1 loss
-        loss = F.l1_loss((noised_x-x).view(bs, -1), prediction)
+        return F.l1_loss((noised_x-x).view(bs, -1), prediction)
+
+
+    def training_step(self, batch, batch_idx):
+        loss = self.step(batch, batch_idx)
         self.log("train_loss", loss, prog_bar=True, on_step=True, on_epoch=True)
         return loss
 
     def validation_step(self, batch, batch_idx):
-        x, _ = batch
-
-        x = x.to(self.device)
-
-        bs = x.size(0)
-
-        ts = sample_tS(T, size=(bs,))
-
-        alpha_hat = alphas_hat[ts]
-
-        noised_x = add_noise(x, t.from_numpy(alpha_hat).cuda())
-
-        flat_noised_x = noised_x.view(bs, -1).float()
-        flat_ts = ts.view(bs, -1).float().cuda()
-
-
-        prediction = self.ddpmnet(flat_noised_x, flat_ts)
-
-        # Compute l1 loss
-        loss = F.l1_loss((noised_x-x).view(bs, -1), prediction)
+        loss = self.step(batch, batch_idx)
         self.log("val_loss", loss, prog_bar=True, on_step=True, on_epoch=True)
         return loss
 
