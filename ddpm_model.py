@@ -58,32 +58,34 @@ class DdpmLight(L.LightningModule):
         super().__init__()
         self.ddpmnet = ddpmnet
 
+
     def sample(self, count):
-        x = t.rand(count, 1, 28, 28).to(self.device)
-        for i in reversed(range(T)):
-            x = self.forward_sample(x, i)
+        x = t.randn(count, 1, 28, 28).to(self.device)  # Use torch.randn for consistency
+        for int_i in reversed(range(T)):
+            x = self.forward_sample(x, int_i)
         return x
 
     def forward_sample(self, x, int_i):
         bs = x.size(0)
+        i = t.full((bs,), int_i, device=self.device, dtype=t.long)
 
-        i = (t.ones(bs) * int_i).int()
-
-        i = i.to(self.device)
-
+        # Extract parameters
         alpha_t = alphas[i].view(bs, 1, 1, 1)
         alpha_hat_t = alphas_hat[i].view(bs, 1, 1, 1)
         beta_t = betas[i].view(bs, 1, 1, 1)
 
-        pred = self.ddpmnet(x.view(bs, -1), i.view(bs, -1))
+        # Predict noise
+        pred = self.ddpmnet(x.view(bs, -1), i.view(bs, -1)).view(bs, 1, 28, 28)
 
-        pred = pred.view(bs, 1, 28, 28)
-
-        prev = (x - (1-alpha_t)/((1-alpha_hat_t)**0.5) * pred) * (1/(alpha_t**0.5))
+        # Compute model mean
+        model_mean = (1 / alpha_t.sqrt()) * (
+            x - ((1 - alpha_t) / (1 - alpha_hat_t).sqrt()) * pred
+        )
+        # Sample the next step
         if int_i > 0:
-            prev += t.randn_like(x) * beta_t**0.5
+            model_mean += t.randn_like(x) * beta_t.sqrt()
 
-        return prev
+        return model_mean
 
     def step(self, batch, _):
         x, _ = batch
