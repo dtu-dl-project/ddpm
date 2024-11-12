@@ -4,9 +4,16 @@ from scorenetwork import ScoreNetwork0
 import lightning as L
 import torch.nn.functional as F
 from betaschedule import betaschedule, compute_alphas, compute_alphas_hat
+from utils import get_device
+import logging
+
+logger = logging.getLogger(__name__)
 
 T = 1000
-device = t.device('cuda' if t.cuda.is_available() else 'cpu')
+
+device = get_device(t)
+
+logger.info(f"Using device: {device}")
 
 betas = betaschedule(1e-4, 0.02, T).to(device)
 alphas_hat = compute_alphas_hat(betas)
