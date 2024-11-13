@@ -31,6 +31,7 @@ from ddpm_model import DdpmLight,DdpmNet
 batch_size = 32
 
 transform = transforms.Compose([
+    transforms.Resize((32, 32)),       # Resizes the image to 32x32
     transforms.ToTensor(),
     transforms.Normalize((0.5,), (0.5,))
 ])

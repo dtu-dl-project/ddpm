@@ -1,6 +1,6 @@
 import torch as t
 import torch.nn as nn
-from unet_model.unet import UNet
+from unet_model_2.unet import DiffusionUnet
 import lightning as L
 import torch.nn.functional as F
 from betaschedule import betaschedule, compute_alphas, compute_alphas_hat
@@ -47,7 +47,7 @@ def sample_tS(T, size):
 class DdpmNet(nn.Module):
     def __init__(self):
         super().__init__()
-        self.unet = UNet(image_size=28*28, input_channels=1)
+        self.unet = DiffusionUnet(dim=28, channels=1)
 
     def forward(self, x, t):
         return self.unet(x, t)
@@ -102,12 +102,12 @@ class DdpmLight(L.LightningModule):
 
         # These are being flattened because
         # the score network expects a (bs, 784) tensor
-        flat_noised_x = noised_x.view(bs, -1)
-        flat_ts = ts.view(bs, -1)
+        # flat_noised_x = noised_x.view(bs, -1)
+        # flat_ts = ts.view(bs, -1)
 
-        prediction = self.ddpmnet(flat_noised_x, flat_ts)
+        prediction = self.ddpmnet(noised_x, ts)
 
-        return F.l1_loss((noised_x-x).view(bs, -1), prediction)
+        return F.l1_loss((noised_x-x), prediction)
 
 
     def training_step(self, batch, batch_idx):
