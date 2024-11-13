@@ -1,6 +1,6 @@
 import torch as t
 import torch.nn as nn
-from scorenetwork import ScoreNetwork0
+from unet_model.unet import UNet
 import lightning as L
 import torch.nn.functional as F
 from betaschedule import betaschedule, compute_alphas, compute_alphas_hat
@@ -47,10 +47,10 @@ def sample_tS(T, size):
 class DdpmNet(nn.Module):
     def __init__(self):
         super().__init__()
-        self.scorenet = ScoreNetwork0()
+        self.unet = UNet(image_size=28*28, input_channels=1)
 
     def forward(self, x, t):
-        return self.scorenet(x, t)
+        return self.unet(x, t)
 
 
 class DdpmLight(L.LightningModule):
