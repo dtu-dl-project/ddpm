@@ -47,7 +47,7 @@ def sample_tS(T, size):
 class DdpmNet(nn.Module):
     def __init__(self):
         super().__init__()
-        self.unet = DiffusionUnet(dim=28, channels=1)
+        self.unet = DiffusionUnet(dim=32, channels=1)
 
     def forward(self, x, t):
         return self.unet(x, t)
@@ -60,7 +60,7 @@ class DdpmLight(L.LightningModule):
 
 
     def sample(self, count):
-        x = t.randn(count, 1, 28, 28).to(self.device)  # Use torch.randn for consistency
+        x = t.randn(count, 1, 32, 32).to(self.device)  # Use torch.randn for consistency
         for int_i in reversed(range(T)):
             x = self.forward_sample(x, int_i)
         return x
@@ -75,7 +75,8 @@ class DdpmLight(L.LightningModule):
         beta_t = betas[i].view(bs, 1, 1, 1)
 
         # Predict noise
-        pred = self.ddpmnet(x.view(bs, -1), i.view(bs, -1)).view(bs, 1, 28, 28)
+        pred = self.ddpmnet(x, i)
+
 
         # Compute model mean
         model_mean = (1 / alpha_t.sqrt()) * (
@@ -104,6 +105,7 @@ class DdpmLight(L.LightningModule):
         # the score network expects a (bs, 784) tensor
         # flat_noised_x = noised_x.view(bs, -1)
         # flat_ts = ts.view(bs, -1)
+
 
         prediction = self.ddpmnet(noised_x, ts)
 

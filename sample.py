@@ -36,13 +36,13 @@ ddpm_light.eval()
 sample_size = 64
 ddpm_light = ddpm_light.to(device)
 with T.no_grad():
-    s = ddpm_light.sample(sample_size).view(sample_size, 28, 28, 1)
+    s = ddpm_light.sample(sample_size).view(sample_size, 32, 32, 1)
 
 fig = plt.figure(figsize=(16, 16))
 columns = 8
 rows = 8
 for i in range(1, columns*rows +1):
-    img = s[i-1].cpu().detach().numpy().reshape(28, 28, 1)
+    img = s[i-1].cpu().detach().numpy().reshape(32, 32, 1)
     fig.add_subplot(rows, columns, i)
     plt.imshow(img)
 
