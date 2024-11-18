@@ -44,6 +44,6 @@ rows = 8
 for i in range(1, columns*rows +1):
     img = s[i-1].cpu().detach().numpy().reshape(32, 32, 1)
     fig.add_subplot(rows, columns, i)
-    plt.imshow(img)
+    plt.imshow(img, cmap="Greys")
 
 plt.savefig("sample.png")
