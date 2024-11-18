@@ -28,12 +28,14 @@ def add_noise(x_0, alpha_hat_t):
     # Reshape alpha_hat_t to match the dimensions of x_0 for broadcasting
     alpha_hat_t = alpha_hat_t.view(-1, 1, 1, 1)
 
+    gaussian_noise = t.randn_like(x_0)
+
     # Generate Gaussian noise with the same shape as x_0
-    noise = t.randn_like(x_0) * t.sqrt(1 - alpha_hat_t)
+    noise = gaussian_noise * t.sqrt(1 - alpha_hat_t)
     mean = x_0 * t.sqrt(alpha_hat_t)
 
     # Return the image tensor with added noise
-    return (noise + mean)
+    return (noise + mean), gaussian_noise
 
 
 def sample_tS(T, size):
@@ -99,7 +101,7 @@ class DdpmLight(L.LightningModule):
 
         alpha_hat = alphas_hat[ts]
 
-        noised_x = add_noise(x, alpha_hat)
+        noised_x, gaussian_noise = add_noise(x, alpha_hat)
 
         # These are being flattened because
         # the score network expects a (bs, 784) tensor
@@ -109,8 +111,7 @@ class DdpmLight(L.LightningModule):
 
         prediction = self.ddpmnet(noised_x, ts)
 
-        return F.mse_loss((noised_x-x), prediction)
-
+        return F.mse_loss(gaussian_noise, prediction)
 
     def training_step(self, batch, batch_idx):
         loss = self.step(batch, batch_idx)
