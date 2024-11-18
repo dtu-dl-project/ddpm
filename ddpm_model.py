@@ -29,11 +29,11 @@ def add_noise(x_0, alpha_hat_t):
     alpha_hat_t = alpha_hat_t.view(-1, 1, 1, 1)
 
     # Generate Gaussian noise with the same shape as x_0
-    noise = t.randn_like(x_0) * t.square(1 - alpha_hat_t)
-    noise += t.square(alpha_hat_t)
+    noise = t.randn_like(x_0) * t.sqrt(1 - alpha_hat_t)
+    mean = x_0 * t.sqrt(alpha_hat_t)
 
     # Return the image tensor with added noise
-    return x_0 + noise
+    return (noise + mean)
 
 
 def sample_tS(T, size):
@@ -41,7 +41,7 @@ def sample_tS(T, size):
     Sample a tensor of shape size with values from [0, T] inclusive
     """
 
-    return t.randint(0, T, size=size)
+    return t.randint(1, T+1, size=size)
 
 
 class DdpmNet(nn.Module):
@@ -62,8 +62,6 @@ class DdpmLight(L.LightningModule):
     def sample(self, count):
         x = t.randn(count, 1, 32, 32).to(self.device)  # Use torch.randn for consistency
         for int_i in reversed(range(T)):
-            if int_i % 250 == 0:
-                print(f'int_i: {int_i}')
             x = self.forward_sample(x, int_i + 1)
         return x
 
@@ -85,7 +83,7 @@ class DdpmLight(L.LightningModule):
             x - ((1 - alpha_t) / (1 - alpha_hat_t).sqrt()) * pred
         )
         # Sample the next step
-        if int_i > 0:
+        if int_i > 1:
             model_mean += t.randn_like(x) * beta_t.sqrt()
 
         return model_mean
@@ -111,7 +109,7 @@ class DdpmLight(L.LightningModule):
 
         prediction = self.ddpmnet(noised_x, ts)
 
-        return F.l1_loss((noised_x-x), prediction)
+        return F.mse_loss((noised_x-x), prediction)
 
 
     def training_step(self, batch, batch_idx):
