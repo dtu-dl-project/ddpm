@@ -62,7 +62,9 @@ class DdpmLight(L.LightningModule):
     def sample(self, count):
         x = t.randn(count, 1, 32, 32).to(self.device)  # Use torch.randn for consistency
         for int_i in reversed(range(T)):
-            x = self.forward_sample(x, int_i)
+            if int_i % 250 == 0:
+                print(f'int_i: {int_i}')
+            x = self.forward_sample(x, int_i + 1)
         return x
 
     def forward_sample(self, x, int_i):
