@@ -13,7 +13,7 @@ def betaschedule(min_beta: float = 1e-4, max_beta: float = 0.02, T: int = 1000) 
     Returns:
         torch.Tensor: Beta values for each step
     """
-    return t.linspace(min_beta, max_beta, T+1, dtype=t.float32)
+    return t.cat((t.tensor([0.0]), t.linspace(min_beta, max_beta, T, dtype=t.float32)))
 
 def compute_alphas(betas: t.Tensor) -> t.Tensor:
     """

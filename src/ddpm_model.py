@@ -40,7 +40,7 @@ def add_noise(x_0, alpha_hat_t):
 
 def sample_tS(T, size):
     """
-    Sample a tensor of shape size with values from [0, T] inclusive
+    Sample a tensor of shape size with values from [1, T] inclusive
     """
 
     return t.randint(1, T+1, size=size)
