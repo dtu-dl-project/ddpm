@@ -125,4 +125,4 @@ class DdpmLight(L.LightningModule):
 
 
     def configure_optimizers(self):
-        return t.optim.Adam(self.parameters(), lr=1e-3)
+        return t.optim.Adam(self.parameters(), lr=3e-4)
