@@ -10,6 +10,19 @@ from torch.utils.data import DataLoader, random_split
 import lightning as L
 import logging
 from utils import get_device
+from transformers import get_cosine_schedule_with_warmup
+
+class SchedulerCallback(L.Callback):
+    def __init__(self, warmup_steps, total_steps):
+        self.warmup_steps = warmup_steps
+        self.total_steps = total_steps
+    
+    def on_train_start(self, trainer, pl_module):
+        optimizer = pl_module.optimizers()  # Get the optimizer
+        scheduler = get_cosine_schedule_with_warmup(
+            optimizer, num_warmup_steps=self.warmup_steps, num_training_steps=self.total_steps
+        )
+        trainer.lr_schedulers = [{'scheduler': scheduler, 'interval': 'step'}]
 
 logging.basicConfig(level=logging.INFO,
                         format=('%(filename)s: '
@@ -52,7 +65,13 @@ model = DdpmNet()
 
 ddpm_light = DdpmLight(model).to(device)
 
+epochs = 200
+
 checkpoint_callback = ModelCheckpoint(dirpath="ckpt", save_top_k=3, monitor="val_loss", filename="{epoch}-{val_loss:.4f}")
 
-trainer = L.Trainer(max_epochs=200, callbacks=checkpoint_callback)
+num_training_steps = len(train_dataloader) * epochs
+warmup_steps = int(0.1 * num_training_steps)
+scheduler_callback = SchedulerCallback(warmup_steps=warmup_steps, total_steps=num_training_steps)
+
+trainer = L.Trainer(max_epochs=epochs, callbacks=[checkpoint_callback, scheduler_callback])
 trainer.fit(model=ddpm_light, train_dataloaders=train_dataloader, val_dataloaders=val_dataloader)
