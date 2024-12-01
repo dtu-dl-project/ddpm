@@ -60,18 +60,18 @@ train_dataset, val_dataset = random_split(mnist_train, [train_size, val_size])
 train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
 val_dataloader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
 test_dataloader = DataLoader(mnist_test, batch_size=batch_size, shuffle=False)
+if __name__ == "__main__":
+    model = DdpmNet()
 
-model = DdpmNet()
+    ddpm_light = DdpmLight(model).to(device)
 
-ddpm_light = DdpmLight(model).to(device)
+    epochs = 200
 
-epochs = 200
+    checkpoint_callback = ModelCheckpoint(dirpath="ckpt", save_top_k=3, monitor="val_loss", filename="{epoch}-{val_loss:.4f}")
 
-checkpoint_callback = ModelCheckpoint(dirpath="ckpt", save_top_k=3, monitor="val_loss", filename="{epoch}-{val_loss:.4f}")
+    num_training_steps = len(train_dataloader) * epochs
+    warmup_steps = int(0.1 * num_training_steps)
+    scheduler_callback = SchedulerCallback(warmup_steps=warmup_steps, total_steps=num_training_steps)
 
-num_training_steps = len(train_dataloader) * epochs
-warmup_steps = int(0.1 * num_training_steps)
-scheduler_callback = SchedulerCallback(warmup_steps=warmup_steps, total_steps=num_training_steps)
-
-trainer = L.Trainer(max_epochs=epochs, callbacks=[checkpoint_callback, scheduler_callback])
-trainer.fit(model=ddpm_light, train_dataloaders=train_dataloader, val_dataloaders=val_dataloader)
+    trainer = L.Trainer(max_epochs=epochs, callbacks=[checkpoint_callback, scheduler_callback])
+    trainer.fit(model=ddpm_light, train_dataloaders=train_dataloader, val_dataloaders=val_dataloader)
