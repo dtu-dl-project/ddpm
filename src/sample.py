@@ -9,6 +9,7 @@ import argparse
 from utils import get_dataset
 from train import batch_size
 from torch.utils.data import DataLoader
+import math
 
 parser = ArgumentParser()
 parser.add_argument("checkpoint", type=str, help="Path to the checkpoint file")
@@ -37,7 +38,7 @@ ddpm_light = DdpmLight.load_from_checkpoint(args.checkpoint, ddpmnet=model)
 ddpm_light.eval().to(device)
 
 # Generate samples
-sample_size = 256
+sample_size = 64
 num_channels = 3 if dataset_name == 'CIFAR10' else 1
 logger.info(f"Generating {sample_size} samples...")
 with T.no_grad():
@@ -77,8 +78,8 @@ logger.info(f"FID Score: {fid_score}")
 # Visualize generated samples
 logger.info("Saving generated samples...")
 fig = plt.figure(figsize=(8, 8))
-columns = 16
-rows = 16
+columns = math.sqrt(sample_size)
+rows = math.sqrt(sample_size)
 for i in range(1, columns * rows + 1):
     img = generated_samples[i - 1].cpu().detach().numpy().transpose(1, 2, 0).squeeze()
     fig.add_subplot(rows, columns, i)
