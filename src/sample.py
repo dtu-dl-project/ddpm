@@ -12,8 +12,8 @@ from torch.utils.data import DataLoader
 
 parser = ArgumentParser()
 parser.add_argument("checkpoint", type=str, help="Path to the checkpoint file")
-parser.add_argument("--dataset", type=str, choices=["MNIST", "CelebA-HQ", "Fashion-MNIST"], default="MNIST",
-                    help="Dataset to use for training (MNIST, CelebA-HQ, Fashion-MNIST)")
+parser.add_argument("--dataset", type=str, choices=["MNIST", "CIFAR10", "Fashion-MNIST"], default="MNIST",
+                    help="Dataset to use for training (MNIST, CIFAR10, Fashion-MNIST)")
 args = parser.parse_args()
 
 logging.basicConfig(level=logging.INFO,
