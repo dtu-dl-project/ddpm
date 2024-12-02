@@ -52,9 +52,9 @@ class DdpmNet(nn.Module):
         if beta_schedule == "linear":
             self.betas = linear_beta_schedule(1e-4, 0.02, T).to(device)
         elif beta_schedule == "cosine":
-            self.betas = cosine_beta_schedule(T, s=0.008)
+            self.betas = cosine_beta_schedule(T, s=0.008).to(device)
         elif beta_schedule == "sigmoid":
-            self.betas = sigmoid_beta_schedule(T=T)
+            self.betas = sigmoid_beta_schedule(T=T).to(device)
 
         self.alphas_hat = compute_alphas_hat(self.betas)
         self.alphas = compute_alphas(self.betas)
