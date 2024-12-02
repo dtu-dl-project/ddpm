@@ -164,3 +164,4 @@ cython_debug/
 .deepLearning
 lightning_logs/
 mnist_data/
+data/
