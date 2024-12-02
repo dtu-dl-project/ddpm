@@ -22,8 +22,8 @@ batch_size = 32
 
 def main():
     parser = argparse.ArgumentParser(description="Train DDPM with different datasets and beta schedules.")
-    parser.add_argument("--dataset", type=str, choices=["MNIST", "CelebA-HQ", "Fashion-MNIST"], default="MNIST",
-                        help="Dataset to use for training (MNIST, CelebA-HQ, Fashion-MNIST)")
+    parser.add_argument("--dataset", type=str, choices=["MNIST", "CIFAR10", "Fashion-MNIST"], default="MNIST",
+                        help="Dataset to use for training (MNIST, CIFAR10, Fashion-MNIST)")
     parser.add_argument("--unet_dim", type=int, default=32, 
                         help="Dimension of the U-Net used in DdpmNet.")
     parser.add_argument("--beta_schedule", type=str, choices=["linear", "cosine", "sigmoid"], default="linear",
@@ -52,7 +52,7 @@ def main():
 
     # Pass the U-Net dimension and beta scheduler to the DdpmNet constructor
     num_channels = 3 if dataset_name == 'CelebA-HQ' else 1
-    image_size = 256 if dataset_name == "CelebA-HQ" else 32
+    image_size = 32
     model = DdpmNet(unet_dim=unet_dim, channels=num_channels, img_size=image_size, beta_schedule=beta_schedule)
     ddpm_light = DdpmLight(model).to(device)
 
