@@ -51,7 +51,7 @@ def main():
     val_dataloader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
 
     # Pass the U-Net dimension and beta scheduler to the DdpmNet constructor
-    num_channels = 3 if dataset_name == 'CelebA-HQ' else 1
+    num_channels = 3 if dataset_name == 'CIFAR10' else 1
     image_size = 32
     model = DdpmNet(unet_dim=unet_dim, channels=num_channels, img_size=image_size, beta_schedule=beta_schedule)
     ddpm_light = DdpmLight(model).to(device)
