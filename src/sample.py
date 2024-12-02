@@ -33,13 +33,13 @@ logger.info(f"Using device: {device}")
 dataset_name = args.dataset
 
 # Load the model
-model = DdpmNet(unet_dim=32, channels=1, img_size=32, beta_schedule="linear")
+num_channels = 3 if dataset_name == 'CIFAR10' else 1
+model = DdpmNet(unet_dim=32, channels=num_channels, img_size=32, beta_schedule="linear")
 ddpm_light = DdpmLight.load_from_checkpoint(args.checkpoint, ddpmnet=model)
 ddpm_light.eval().to(device)
 
 # Generate samples
 sample_size = 64
-num_channels = 3 if dataset_name == 'CIFAR10' else 1
 logger.info(f"Generating {sample_size} samples...")
 with T.no_grad():
     generated_samples = ddpm_light.sample(sample_size).view(sample_size, num_channels, 32, 32).to(device)
