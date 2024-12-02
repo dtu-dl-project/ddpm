@@ -121,7 +121,7 @@ class DdpmLight(L.LightningModule):
 
         prediction = self.ddpmnet(noised_x, ts)
 
-        if self.ddpmnet.loss_type == "smooth_l1_loss":
+        if self.ddpmnet.loss_type == "smooth_l1":
             return F.smooth_l1_loss(gaussian_noise, prediction)
         elif self.ddpmnet.loss_type == "mse":
             return F.mse_loss(gaussian_noise, prediction)

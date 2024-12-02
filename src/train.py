@@ -29,8 +29,8 @@ def main():
     parser.add_argument("--beta_schedule", type=str, choices=["linear", "cosine", "sigmoid"], default="linear",
                         help="Beta schedule type for DDPM (linear, cosine, sigmoid).")
     parser.add_argument("--load_checkpoint", type=str, default=None, help="Path to checkpoint file to resume training.")
-    parser.add_argument("--loss", type=str, default="smooth_l1_loss", 
-                        help="Loss function to use during training (e.g., smooth_l1_loss, mse_loss, etc.).")
+    parser.add_argument("--loss", type=str, default="smooth_l1", 
+                        help="Loss function to use during training (e.g., smooth_l1, mse, etc.).")
     parser.add_argument("--lr", type=float, default=3e-4, 
                         help="Learning rate for training.")
     args = parser.parse_args()
