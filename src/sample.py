@@ -80,8 +80,8 @@ logger.info(f"FID Score: {fid_score}")
 # Visualize generated samples
 logger.info("Saving generated samples...")
 fig = plt.figure(figsize=(8, 8))
-columns = math.sqrt(sample_size)
-rows = math.sqrt(sample_size)
+columns = int(math.sqrt(sample_size))
+rows = int(math.sqrt(sample_size))
 for i in range(1, columns * rows + 1):
     img = generated_samples[i - 1].cpu().detach().numpy().transpose(1, 2, 0).squeeze()
     fig.add_subplot(rows, columns, i)
