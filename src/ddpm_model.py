@@ -119,7 +119,7 @@ class DdpmLight(L.LightningModule):
 
         prediction = self.ddpmnet(noised_x, ts)
 
-        return F.mse_loss(gaussian_noise, prediction)
+        return F.smooth_l1_loss(gaussian_noise, prediction)
 
     def training_step(self, batch, batch_idx):
         loss = self.step(batch, batch_idx)
