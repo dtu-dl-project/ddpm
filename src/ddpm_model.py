@@ -3,7 +3,7 @@ import torch.nn as nn
 from unet_model_2.unet import DiffusionUnet
 import lightning as L
 import torch.nn.functional as F
-from betaschedule import betaschedule, compute_alphas, compute_alphas_hat
+from betaschedule import linear_beta_schedule, cosine_beta_schedule, sigmoid_beta_schedule, compute_alphas, compute_alphas_hat
 from utils import get_device
 import logging
 
@@ -14,10 +14,6 @@ T = 1000
 device = get_device(t)
 
 logger.info(f"Using device: {device}")
-
-betas = betaschedule(1e-4, 0.02, T).to(device)
-alphas_hat = compute_alphas_hat(betas)
-alphas = compute_alphas(betas)
 
 def add_noise(x_0, alpha_hat_t):
     """
@@ -47,9 +43,21 @@ def sample_tS(T, size):
 
 
 class DdpmNet(nn.Module):
-    def __init__(self):
+    def __init__(self, unet_dim, channels, img_size, beta_schedule):
         super().__init__()
-        self.unet = DiffusionUnet(dim=32, channels=1)
+        self.channels = channels
+        self.img_size = img_size
+        self.unet = DiffusionUnet(dim=unet_dim, channels=channels)
+        self.beta_schedule = beta_schedule
+        if beta_schedule == "linear":
+            self.betas = linear_beta_schedule(1e-4, 0.02, T).to(device)
+        elif beta_schedule == "cosine":
+            self.betas = cosine_beta_schedule(T, s=0.008)
+        elif beta_schedule == "sigmoid":
+            self.betas = sigmoid_beta_schedule(T=T)
+
+        self.alphas_hat = compute_alphas_hat(self.betas)
+        self.alphas = compute_alphas(self.betas)
 
     def forward(self, x, t):
         return self.unet(x, t)
@@ -62,7 +70,7 @@ class DdpmLight(L.LightningModule):
 
 
     def sample(self, count):
-        x = t.randn(count, 1, 32, 32).to(self.device)  # Use torch.randn for consistency
+        x = t.randn(count, self.ddpmnet.channels, self.ddpmnet.img_size, self.ddpmnet.img_size).to(self.device)  # Use torch.randn for consistency
         for int_i in reversed(range(T)):
             x = self.forward_sample(x, int_i + 1)
         return x
@@ -72,9 +80,9 @@ class DdpmLight(L.LightningModule):
         i = t.full((bs,), int_i, device=self.device, dtype=t.long)
 
         # Extract parameters
-        alpha_t = alphas[i].view(bs, 1, 1, 1)
-        alpha_hat_t = alphas_hat[i].view(bs, 1, 1, 1)
-        beta_t = betas[i].view(bs, 1, 1, 1)
+        alpha_t = self.ddpmnet.alphas[i].view(bs, 1, 1, 1)
+        alpha_hat_t = self.ddpmnet.alphas_hat[i].view(bs, 1, 1, 1)
+        beta_t = self.ddpmnet.betas[i].view(bs, 1, 1, 1)
 
         # Predict noise
         pred = self.ddpmnet(x, i)
@@ -99,7 +107,7 @@ class DdpmLight(L.LightningModule):
 
         ts = sample_tS(T, size=(bs,)).to(self.device)
 
-        alpha_hat = alphas_hat[ts]
+        alpha_hat = self.ddpmnet.alphas_hat[ts]
 
         noised_x, gaussian_noise = add_noise(x, alpha_hat)
 
