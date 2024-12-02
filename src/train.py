@@ -56,10 +56,7 @@ def main():
     image_size = 32
     model = DdpmNet(unet_dim=unet_dim, channels=num_channels, img_size=image_size, beta_schedule=beta_schedule)
     ddpm_light = DdpmLight(model).to(device)
-    if args.load_checkpoint:
-        ddpm_light = DdpmLight.load_from_checkpoint(args.load_checkpoint, ddpmnet=model)
-    ddpm_light = ddpm_light.to(device)
-
+    
     epochs = 200
 
     checkpoint_callback = ModelCheckpoint(
@@ -70,7 +67,10 @@ def main():
     )
 
     trainer = L.Trainer(max_epochs=epochs, callbacks=checkpoint_callback)
-    trainer.fit(model=ddpm_light, train_dataloaders=train_dataloader, val_dataloaders=val_dataloader)
+    if args.load_checkpoint:
+        trainer.fit(model=ddpm_light, train_dataloaders=train_dataloader, val_dataloaders=val_dataloader, ckpt_path=args.load_checkpoint)
+    else:
+        trainer.fit(model=ddpm_light, train_dataloaders=train_dataloader, val_dataloaders=val_dataloader)
 
 if __name__ == "__main__":
     main()
