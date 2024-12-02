@@ -6,6 +6,12 @@ def get_device(torch):
     return torch.device("cuda" if T.cuda.is_available() else ("mps" if T.mps.is_available() else "cpu"))
 
 def get_dataset(dataset_name, transform):
+    image_size = 256 if dataset_name == "CelebA-HQ" else 32
+    transform = transforms.Compose([
+        transforms.Resize((image_size, image_size)),       # Resizes the image based on dataset
+        transforms.ToTensor(),
+        transforms.Lambda(lambda t: (t * 2) - 1),
+    ])
     if dataset_name == "MNIST":
         train_data = datasets.MNIST(root="data", train=True, transform=transform, download=True)
         train_size = int(0.9 * len(train_data))

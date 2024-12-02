@@ -45,21 +45,14 @@ def main():
     # Import the model after setting the device
     from ddpm_model import DdpmLight, DdpmNet
 
-    image_size = 256 if dataset_name == "CelebA-HQ" else 32
-
-    transform = transforms.Compose([
-        transforms.Resize((image_size, image_size)),       # Resizes the image based on dataset
-        transforms.ToTensor(),
-        transforms.Lambda(lambda t: (t * 2) - 1),
-    ])
-
-    train_dataset, val_dataset, test_dataset = get_dataset(dataset_name, transform)
+    train_dataset, val_dataset, test_dataset = get_dataset(dataset_name)
 
     train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     val_dataloader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
 
     # Pass the U-Net dimension and beta scheduler to the DdpmNet constructor
     num_channels = 3 if dataset_name == 'CelebA-HQ' else 1
+    image_size = 256 if dataset_name == "CelebA-HQ" else 32
     model = DdpmNet(unet_dim=unet_dim, channels=num_channels, img_size=image_size, beta_schedule=beta_schedule)
     ddpm_light = DdpmLight(model).to(device)
 
