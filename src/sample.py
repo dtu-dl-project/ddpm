@@ -86,6 +86,9 @@ for i in range(1, columns * rows + 1):
     img = generated_samples[i - 1].cpu().detach().numpy().transpose(1, 2, 0).squeeze()
     fig.add_subplot(rows, columns, i)
     plt.axis('off')
-    plt.imshow(img, cmap="gray")
+    if num_channels == 1:
+        plt.imshow(img, cmap="gray")
+    else:
+        plt.imshow(img)
 
 plt.savefig("sample.png")
