@@ -4,11 +4,16 @@ import logging
 from utils import get_device
 from argparse import ArgumentParser
 from torchmetrics.image.fid import FrechetInceptionDistance
-from train import test_dataloader
 from ddpm_model import DdpmLight, DdpmNet
+import argparse
+from utils import get_dataset
+from train import batch_size
+from torch.utils.data import DataLoader
 
 parser = ArgumentParser()
 parser.add_argument("checkpoint", type=str, help="Path to the checkpoint file")
+parser.add_argument("--dataset", type=str, choices=["MNIST", "CelebA-HQ", "Fashion-MNIST"], default="MNIST",
+                    help="Dataset to use for training (MNIST, CelebA-HQ, Fashion-MNIST)")
 args = parser.parse_args()
 
 logging.basicConfig(level=logging.INFO,
@@ -24,8 +29,10 @@ logger = logging.getLogger(__name__)
 device = get_device(T)
 logger.info(f"Using device: {device}")
 
+dataset_name = args.dataset
+
 # Load the model
-model = DdpmNet()
+model = DdpmNet(unet_dim=32, channels=1, img_size=32, beta_schedule="linear")
 ddpm_light = DdpmLight.load_from_checkpoint(args.checkpoint, ddpmnet=model)
 ddpm_light.eval().to(device)
 
@@ -46,6 +53,8 @@ fid = FrechetInceptionDistance(feature=2048, normalize=True).to(device)
 
 # Add real images to FID
 logger.info("Adding real images to FID computation...")
+_, _, test_dataset = get_dataset(dataset_name)
+test_dataloader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
 for real_batch in test_dataloader:
     real_images, _ = real_batch
     # Normalize real images to [0, 1]

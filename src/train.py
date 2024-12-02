@@ -5,7 +5,7 @@ from torchvision import datasets, transforms
 from torch.utils.data import DataLoader, random_split
 import lightning as L
 import logging
-from utils import get_device
+from utils import get_device, get_dataset
 
 logging.basicConfig(
     level=logging.INFO,
@@ -18,28 +18,7 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
-def get_dataset(dataset_name, transform):
-    if dataset_name == "MNIST":
-        train_data = datasets.MNIST(root="data", train=True, transform=transform, download=True)
-        train_size = int(0.9 * len(train_data))
-        val_size = len(train_data) - train_size
-        train_dataset, val_dataset = random_split(train_data, [train_size, val_size])
-        test_dataset = datasets.MNIST(root="data", train=False, transform=transform, download=True)
-    elif dataset_name == "CelebA-HQ":
-        train_data = datasets.ImageFolder(root="data/celeba_hq", transform=transform)
-        train_size = int(0.9 * len(train_data))
-        val_size = len(train_data) - train_size
-        train_dataset, val_dataset = random_split(train_data, [train_size, val_size])
-        test_dataset = None
-    elif dataset_name == "Fashion-MNIST":
-        train_data = datasets.FashionMNIST(root="data", train=True, transform=transform, download=True)
-        train_size = int(0.9 * len(train_data))
-        val_size = len(train_data) - train_size
-        train_dataset, val_dataset = random_split(train_data, [train_size, val_size])
-        test_dataset = datasets.FashionMNIST(root="data", train=False, transform=transform, download=True)
-    else:
-        raise ValueError(f"Unsupported dataset: {dataset_name}")
-    return train_dataset, val_dataset, test_dataset
+batch_size = 32
 
 def main():
     parser = argparse.ArgumentParser(description="Train DDPM with different datasets and beta schedules.")
@@ -66,8 +45,6 @@ def main():
     # Import the model after setting the device
     from ddpm_model import DdpmLight, DdpmNet
 
-    batch_size = 32
-
     image_size = 256 if dataset_name == "CelebA-HQ" else 32
 
     transform = transforms.Compose([
@@ -80,7 +57,6 @@ def main():
 
     train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     val_dataloader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
-    test_dataloader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
 
     # Pass the U-Net dimension and beta scheduler to the DdpmNet constructor
     num_channels = 3 if dataset_name == 'CelebA-HQ' else 1
