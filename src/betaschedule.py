@@ -16,32 +16,53 @@ def linear_beta_schedule(min_beta: float = 1e-4, max_beta: float = 0.02, T: int 
     """
     return t.cat((t.tensor([0.0]), t.linspace(min_beta, max_beta, T, dtype=t.float32)))
 
-def cosine_beta_schedule(T: int = 1000, s: float = 0.008):
+def cosine_beta_schedule(T: int = 1000, s: float = 0.008) -> t.Tensor:
     """
-    cosine schedule
-    as proposed in https://openreview.net/forum?id=-NEXDKk8gZ
+    Function that returns the beta values for a cosine schedule.
+    
+    Args:
+        T (int): Number of steps.
+        s (float): Small offset to prevent singularity issues at t=0.
+    
+    Returns:
+        t.Tensor: Beta values for each step.
     """
-    steps = T + 1
-    tt = t.linspace(0, T, steps, dtype = t.float32) / T
-    alphas_cumprod = t.cos((tt + s) / (1 + s) * math.pi * 0.5) ** 2
-    alphas_cumprod = alphas_cumprod / alphas_cumprod[0]
-    betas = 1 - (alphas_cumprod[1:] / alphas_cumprod[:-1])
-    return t.clip(betas, 0, 0.999)
+    # Define the cosine function according to the schedule
+    def alpha_bar_fn(timestep):
+        return math.cos((timestep / T + s) / (1 + s) * math.pi / 2) ** 2
+    
+    alphas_bar = [alpha_bar_fn(timestep) for timestep in range(T + 1)]
+    betas = []
+    
+    for tt in range(1, T + 1):
+        beta = min(1.0 - (alphas_bar[tt] / alphas_bar[tt - 1]), 0.999)
+        betas.append(beta)
+    
+    return t.cat((t.tensor([0.0]), t.tensor(betas, dtype=t.float32)))
 
-def sigmoid_beta_schedule(T: int = 1000, start: int = -3, end: int = 3, tau: int = 1, clamp_min: float = 1e-5):
+import torch as t
+
+def sigmoid_beta_schedule(min_beta: float = 1e-4, max_beta: float = 0.02, T: int = 1000, s: float = 0.008) -> t.Tensor:
     """
-    sigmoid schedule
-    proposed in https://arxiv.org/abs/2212.11972 - Figure 8
-    better for images > 64x64, when used during training
+    Function that returns the beta values for a sigmoid schedule.
+    
+    Args:
+        min_beta (float): Minimum beta value.
+        max_beta (float): Maximum beta value.
+        T (int): Number of steps.
+        s (float): Scale factor to adjust the sharpness of the sigmoid curve.
+    
+    Returns:
+        t.Tensor: Beta values for each step.
     """
-    steps = T + 1
-    tt = t.linspace(0, T, steps, dtype = t.float32) / T
-    v_start = t.tensor(start / tau).sigmoid()
-    v_end = t.tensor(end / tau).sigmoid()
-    alphas_cumprod = (-((tt * (end - start) + start) / tau).sigmoid() + v_end) / (v_end - v_start)
-    alphas_cumprod = alphas_cumprod / alphas_cumprod[0]
-    betas = 1 - (alphas_cumprod[1:] / alphas_cumprod[:-1])
-    return t.clip(betas, 0, 0.999)
+    # Define the sigmoid function according to the schedule
+    def sigmoid_fn(timestep):
+        return min_beta + (max_beta - min_beta) / (1 + t.exp(-s * (timestep - T // 2)))
+
+    betas = [sigmoid_fn(timestep) for timestep in range(T)]
+    
+    return t.cat((t.tensor([0.0]), t.tensor(betas, dtype=t.float32)))
+
 
 def compute_alphas(betas: t.Tensor) -> t.Tensor:
     """
