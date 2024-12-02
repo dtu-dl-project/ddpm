@@ -5,7 +5,7 @@ from torch.utils.data import random_split
 def get_device(torch):
     return torch.device("cuda" if T.cuda.is_available() else ("mps" if T.mps.is_available() else "cpu"))
 
-def get_dataset(dataset_name, transform):
+def get_dataset(dataset_name):
     image_size = 256 if dataset_name == "CelebA-HQ" else 32
     transform = transforms.Compose([
         transforms.Resize((image_size, image_size)),       # Resizes the image based on dataset

@@ -37,7 +37,7 @@ ddpm_light = DdpmLight.load_from_checkpoint(args.checkpoint, ddpmnet=model)
 ddpm_light.eval().to(device)
 
 # Generate samples
-sample_size = 64
+sample_size = 256
 logger.info(f"Generating {sample_size} samples...")
 with T.no_grad():
     generated_samples = ddpm_light.sample(sample_size).view(sample_size, 1, 32, 32).to(device)
@@ -76,11 +76,12 @@ logger.info(f"FID Score: {fid_score}")
 # Visualize generated samples
 logger.info("Saving generated samples...")
 fig = plt.figure(figsize=(8, 8))
-columns = 8
-rows = 8
+columns = 16
+rows = 16
 for i in range(1, columns * rows + 1):
     img = generated_samples[i - 1].cpu().detach().numpy().transpose(1, 2, 0).squeeze()
     fig.add_subplot(rows, columns, i)
-    plt.imshow(img, cmap="Greys")
+    plt.axis('off')
+    plt.imshow(img, cmap="gray")
 
 plt.savefig("sample.png")
