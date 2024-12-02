@@ -28,6 +28,7 @@ def main():
                         help="Dimension of the U-Net used in DdpmNet.")
     parser.add_argument("--beta_schedule", type=str, choices=["linear", "cosine", "sigmoid"], default="linear",
                         help="Beta schedule type for DDPM (linear, cosine, sigmoid).")
+    parser.add_argument("--load_checkpoint", type=str, default=None,)
     args = parser.parse_args()
 
     dataset_name = args.dataset
@@ -55,6 +56,9 @@ def main():
     image_size = 32
     model = DdpmNet(unet_dim=unet_dim, channels=num_channels, img_size=image_size, beta_schedule=beta_schedule)
     ddpm_light = DdpmLight(model).to(device)
+    if args.load_checkpoint:
+        ddpm_light = DdpmLight.load_from_checkpoint(args.load_checkpoint, ddpmnet=model)
+    ddpm_light = ddpm_light.to(device)
 
     epochs = 200
 
