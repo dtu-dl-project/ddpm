@@ -38,9 +38,10 @@ ddpm_light.eval().to(device)
 
 # Generate samples
 sample_size = 256
+num_channels = 3 if dataset_name == 'CIFAR10' else 1
 logger.info(f"Generating {sample_size} samples...")
 with T.no_grad():
-    generated_samples = ddpm_light.sample(sample_size).view(sample_size, 1, 32, 32).to(device)
+    generated_samples = ddpm_light.sample(sample_size).view(sample_size, num_channels, 32, 32).to(device)
 
 # Normalize generated samples to [0, 1]
 generated_samples = ((generated_samples + 1) / 2).clamp(0, 1)
