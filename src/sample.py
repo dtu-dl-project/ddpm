@@ -46,7 +46,8 @@ with T.no_grad():
 
 # Normalize generated samples to [0, 1]
 generated_samples = ((generated_samples + 1) / 2).clamp(0, 1)
-generated_samples = generated_samples.repeat(1, 3, 1, 1)  # Convert to RGB 
+if num_channels == 1:
+    generated_samples = generated_samples.repeat(1, 3, 1, 1)  # Convert to RGB 
 
 generated_samples = generated_samples.to(dtype=T.float64)
 
@@ -61,7 +62,8 @@ for real_batch in test_dataloader:
     real_images, _ = real_batch
     # Normalize real images to [0, 1]
     real_images = ((real_images + 1) / 2).clamp(0, 1).to(device)
-    real_images = real_images.repeat(1, 3, 1, 1)  # Convert to RGB
+    if num_channels == 1:
+        real_images = real_images.repeat(1, 3, 1, 1)  # Convert to RGB
     # Move real images to CPU
     real_images = real_images.to(dtype=T.float64)
     fid.update(real_images, real=True)
