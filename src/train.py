@@ -28,16 +28,24 @@ def main():
                         help="Dimension of the U-Net used in DdpmNet.")
     parser.add_argument("--beta_schedule", type=str, choices=["linear", "cosine", "sigmoid"], default="linear",
                         help="Beta schedule type for DDPM (linear, cosine, sigmoid).")
-    parser.add_argument("--load_checkpoint", type=str, default=None,)
+    parser.add_argument("--load_checkpoint", type=str, default=None, help="Path to checkpoint file to resume training.")
+    parser.add_argument("--loss", type=str, default="smooth_l1_loss", 
+                        help="Loss function to use during training (e.g., smooth_l1_loss, mse_loss, etc.).")
+    parser.add_argument("--lr", type=float, default=3e-4, 
+                        help="Learning rate for training.")
     args = parser.parse_args()
 
     dataset_name = args.dataset
     unet_dim = args.unet_dim
     beta_schedule = args.beta_schedule
+    loss_type = args.loss
+    lr = args.lr
 
     logger.info(f"Using dataset: {dataset_name}")
     logger.info(f"Using U-Net dimension: {unet_dim}")
     logger.info(f"Using beta schedule: {beta_schedule}")
+    logger.info(f"Using loss type: {loss_type}")
+    logger.info(f"Using learning rate: {lr}")
 
     # Set device to cuda if available, set to mps if available else cpu
     device = get_device(T)
@@ -51,10 +59,11 @@ def main():
     train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     val_dataloader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
 
-    # Pass the U-Net dimension and beta scheduler to the DdpmNet constructor
+    # Pass the U-Net dimension, beta scheduler, loss type, and learning rate to the DdpmNet constructor
     num_channels = 3 if dataset_name == 'CIFAR10' else 1
     image_size = 32
-    model = DdpmNet(unet_dim=unet_dim, channels=num_channels, img_size=image_size, beta_schedule=beta_schedule)
+    model = DdpmNet(unet_dim=unet_dim, channels=num_channels, img_size=image_size, 
+                    beta_schedule=beta_schedule, loss_type=loss_type, lr=lr)
     ddpm_light = DdpmLight(model).to(device)
     
     epochs = 200
@@ -63,7 +72,7 @@ def main():
         dirpath="ckpt", 
         save_top_k=3, 
         monitor="val_loss", 
-        filename=f"{dataset_name}_unet_dim={unet_dim}_beta={beta_schedule}_{{epoch}}-{{val_loss:.5f}}"
+        filename=f"{dataset_name}_unet_dim={unet_dim}_beta={beta_schedule}_loss={loss_type}_lr={lr}_{{epoch}}-{{val_loss:.5f}}"
     )
 
     trainer = L.Trainer(max_epochs=epochs, callbacks=checkpoint_callback)

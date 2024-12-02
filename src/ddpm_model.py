@@ -43,7 +43,7 @@ def sample_tS(T, size):
 
 
 class DdpmNet(nn.Module):
-    def __init__(self, unet_dim, channels, img_size, beta_schedule):
+    def __init__(self, unet_dim, channels, img_size, beta_schedule, loss_type="smooth_l1_loss", lr=3e-4):
         super().__init__()
         self.channels = channels
         self.img_size = img_size
@@ -55,6 +55,8 @@ class DdpmNet(nn.Module):
             self.betas = cosine_beta_schedule(T, s=0.008).to(device)
         elif beta_schedule == "sigmoid":
             self.betas = sigmoid_beta_schedule(T=T).to(device)
+        self.loss_type = loss_type
+        self.lr = lr
 
         self.alphas_hat = compute_alphas_hat(self.betas)
         self.alphas = compute_alphas(self.betas)
@@ -119,7 +121,12 @@ class DdpmLight(L.LightningModule):
 
         prediction = self.ddpmnet(noised_x, ts)
 
-        return F.smooth_l1_loss(gaussian_noise, prediction)
+        if self.ddpmnet.loss_type == "smooth_l1_loss":
+            return F.smooth_l1_loss(gaussian_noise, prediction)
+        elif self.ddpmnet.loss_type == "mse":
+            return F.mse_loss(gaussian_noise, prediction)
+        else:
+            raise ValueError("Invalid loss type")
 
     def training_step(self, batch, batch_idx):
         loss = self.step(batch, batch_idx)
@@ -131,6 +138,5 @@ class DdpmLight(L.LightningModule):
         self.log("val_loss", loss, prog_bar=True, on_step=True, on_epoch=True)
         return loss
 
-
     def configure_optimizers(self):
-        return t.optim.Adam(self.parameters(), lr=3e-4)
+        return t.optim.Adam(self.parameters(), lr=self.ddpmnet.lr)
