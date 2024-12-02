@@ -22,8 +22,8 @@ def cosine_beta_schedule(T: int = 1000, s: float = 0.008):
     as proposed in https://openreview.net/forum?id=-NEXDKk8gZ
     """
     steps = T + 1
-    t = t.linspace(0, T, steps, dtype = t.float64) / T
-    alphas_cumprod = t.cos((t + s) / (1 + s) * math.pi * 0.5) ** 2
+    tt = t.linspace(0, T, steps, dtype = t.float64) / T
+    alphas_cumprod = t.cos((tt + s) / (1 + s) * math.pi * 0.5) ** 2
     alphas_cumprod = alphas_cumprod / alphas_cumprod[0]
     betas = 1 - (alphas_cumprod[1:] / alphas_cumprod[:-1])
     return t.clip(betas, 0, 0.999)
@@ -35,10 +35,10 @@ def sigmoid_beta_schedule(T: int = 1000, start: int = -3, end: int = 3, tau: int
     better for images > 64x64, when used during training
     """
     steps = T + 1
-    t = t.linspace(0, T, steps, dtype = t.float64) / T
+    tt = t.linspace(0, T, steps, dtype = t.float64) / T
     v_start = t.tensor(start / tau).sigmoid()
     v_end = t.tensor(end / tau).sigmoid()
-    alphas_cumprod = (-((t * (end - start) + start) / tau).sigmoid() + v_end) / (v_end - v_start)
+    alphas_cumprod = (-((tt * (end - start) + start) / tau).sigmoid() + v_end) / (v_end - v_start)
     alphas_cumprod = alphas_cumprod / alphas_cumprod[0]
     betas = 1 - (alphas_cumprod[1:] / alphas_cumprod[:-1])
     return t.clip(betas, 0, 0.999)
