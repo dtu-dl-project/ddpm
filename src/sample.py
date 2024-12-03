@@ -39,10 +39,11 @@ ddpm_light = DdpmLight.load_from_checkpoint(args.checkpoint, ddpmnet=model)
 ddpm_light.eval().to(device)
 
 # Generate samples
+klass = 0
 sample_size = 64
 logger.info(f"Generating {sample_size} samples...")
 with T.no_grad():
-    generated_samples = ddpm_light.sample(sample_size).view(sample_size, num_channels, 32, 32).to(device)
+    generated_samples = ddpm_light.sample(sample_size, klass).view(sample_size, num_channels, 32, 32).to(device)
 
 # Normalize generated samples to [0, 1]
 generated_samples = ((generated_samples + 1) / 2).clamp(0, 1)

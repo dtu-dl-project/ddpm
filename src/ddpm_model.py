@@ -61,8 +61,8 @@ class DdpmNet(nn.Module):
         self.alphas_hat = compute_alphas_hat(self.betas)
         self.alphas = compute_alphas(self.betas)
 
-    def forward(self, x, t):
-        return self.unet(x, t)
+    def forward(self, x, t, c):
+        return self.unet(x, t, c)
 
 
 class DdpmLight(L.LightningModule):
@@ -71,13 +71,13 @@ class DdpmLight(L.LightningModule):
         self.ddpmnet = ddpmnet
 
 
-    def sample(self, count):
+    def sample(self, count, klass):
         x = t.randn(count, self.ddpmnet.channels, self.ddpmnet.img_size, self.ddpmnet.img_size).to(self.device)  # Use torch.randn for consistency
         for int_i in reversed(range(T)):
-            x = self.forward_sample(x, int_i + 1)
+            x = self.forward_sample(x, int_i + 1, klass)
         return x
 
-    def forward_sample(self, x, int_i):
+    def forward_sample(self, x, int_i, klass):
         bs = x.size(0)
         i = t.full((bs,), int_i, device=self.device, dtype=t.long)
 
@@ -87,7 +87,7 @@ class DdpmLight(L.LightningModule):
         beta_t = self.ddpmnet.betas[i].view(bs, 1, 1, 1)
 
         # Predict noise
-        pred = self.ddpmnet(x, i)
+        pred = self.ddpmnet(x, i, t.ones_like(i) * klass) # TODO fix if we want to use different classes
 
 
         # Compute model mean
@@ -101,25 +101,21 @@ class DdpmLight(L.LightningModule):
         return model_mean
 
     def step(self, batch, _):
-        x, _ = batch
+        x, y = batch
 
         x = x.to(self.device)
 
         bs = x.size(0)
 
-        ts = sample_tS(T, size=(bs,)).to(self.device)
+        ts = sample_tS(T, size=(bs,)).to(self.device) # Timestep for each sample
+
+        cs = y.to(self.device) # Label for each sample
 
         alpha_hat = self.ddpmnet.alphas_hat[ts]
 
         noised_x, gaussian_noise = add_noise(x, alpha_hat)
 
-        # These are being flattened because
-        # the score network expects a (bs, 784) tensor
-        # flat_noised_x = noised_x.view(bs, -1)
-        # flat_ts = ts.view(bs, -1)
-
-
-        prediction = self.ddpmnet(noised_x, ts)
+        prediction = self.ddpmnet(noised_x, ts, cs)
 
         if self.ddpmnet.loss_type == "smooth_l1":
             return F.smooth_l1_loss(gaussian_noise, prediction)
