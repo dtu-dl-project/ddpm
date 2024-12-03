@@ -1,8 +1,12 @@
 import torch as T
+import os
 from torchvision import datasets, transforms
 from torch.utils.data import random_split
 
 def get_device(torch):
+    if "FORCE_DEVICE" in os.environ:
+        return os.environ["FORCE_DEVICE"]
+
     return torch.device("cuda" if T.cuda.is_available() else ("mps" if T.mps.is_available() else "cpu"))
 
 def get_dataset(dataset_name):

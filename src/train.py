@@ -5,6 +5,7 @@ from torchvision import datasets, transforms
 from torch.utils.data import DataLoader, random_split
 import lightning as L
 import logging
+import os
 from utils import get_device, get_dataset
 
 logging.basicConfig(
@@ -55,6 +56,7 @@ def main():
     from ddpm_model import DdpmLight, DdpmNet
 
     train_dataset, val_dataset, test_dataset = get_dataset(dataset_name)
+
 
     train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     val_dataloader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)

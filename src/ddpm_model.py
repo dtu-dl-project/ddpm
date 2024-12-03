@@ -75,6 +75,7 @@ class DdpmLight(L.LightningModule):
         x = t.randn(count, self.ddpmnet.channels, self.ddpmnet.img_size, self.ddpmnet.img_size).to(self.device)  # Use torch.randn for consistency
         for int_i in reversed(range(T)):
             x = self.forward_sample(x, int_i + 1, klass)
+            logger.info(f"Sampled timestep {int_i + 1}")
         return x
 
     def forward_sample(self, x, int_i, klass):
