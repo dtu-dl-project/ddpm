@@ -82,13 +82,16 @@ class DdpmLight(L.LightningModule):
         bs = x.size(0)
         i = t.full((bs,), int_i, device=self.device, dtype=t.long)
 
+        if not isinstance(klass, t.Tensor):
+            klass = t.full((bs,), klass).to(self.device)
+
         # Extract parameters
         alpha_t = self.ddpmnet.alphas[i].view(bs, 1, 1, 1)
         alpha_hat_t = self.ddpmnet.alphas_hat[i].view(bs, 1, 1, 1)
         beta_t = self.ddpmnet.betas[i].view(bs, 1, 1, 1)
 
         # Predict noise
-        pred = self.ddpmnet(x, i, t.ones_like(i) * klass) # TODO fix if we want to use different classes
+        pred = self.ddpmnet(x, i, klass)
 
 
         # Compute model mean
