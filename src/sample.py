@@ -59,6 +59,8 @@ model = DdpmNet(
     channels=num_channels,
     img_size=32,
     beta_schedule=checkpoint_params['beta_schedule'],
+    loss_type=checkpoint_params['loss'],
+    lr=checkpoint_params['lr'],
     cond=checkpoint_params['cond']
 )
 ddpm_light = DdpmLight.load_from_checkpoint(args.checkpoint, ddpmnet=model)
