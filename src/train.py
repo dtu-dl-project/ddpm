@@ -77,7 +77,7 @@ def main():
         dirpath="ckpt", 
         save_top_k=3, 
         monitor="val_loss", 
-        filename=f"{dataset_name}_unet_dim={unet_dim}_beta={beta_schedule}_loss={loss_type}_lr={lr}_cond={cond}_{{epoch}}-{{val_loss:.5f}}"
+        filename=f"{dataset_name}_unet_dim={unet_dim}_beta={beta_schedule}_loss={loss_type}_lr={lr}_cond={cond}_bs={batch_size}_{{epoch}}-{{val_loss:.5f}}"
     )
 
     trainer = L.Trainer(max_epochs=epochs, callbacks=checkpoint_callback)

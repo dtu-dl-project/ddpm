@@ -14,7 +14,7 @@ def parse_checkpoint_filename(filename):
     base_filename = filename.split('/')[-1]
     pattern = (
         r"^(?P<dataset_name>\w+)_unet_dim=(?P<unet_dim>\d+)_beta=(?P<beta_schedule>\w+)_loss=(?P<loss>\w+)_lr=(?P<lr>[0-9.]+)"
-        r"_cond=(?P<cond>\w+)_epoch=(?P<epoch>\d+)-val_loss=(?P<val_loss>[0-9.]+)\.ckpt$"
+        r"_cond=(?P<cond>\w+)_bs=(?P<bs>\d+)_epoch=(?P<epoch>\d+)-val_loss=(?P<val_loss>[0-9.]+)\.ckpt$"
     )
     match = re.match(pattern, base_filename)
     if not match:
@@ -24,6 +24,7 @@ def parse_checkpoint_filename(filename):
     params['unet_dim'] = int(params['unet_dim'])
     params['lr'] = float(params['lr'])
     params['cond'] = params['cond'].lower() == 'true'
+    params['bs'] = int(params['bs'])
     params['epoch'] = int(params['epoch'])
     params['val_loss'] = float(params['val_loss'])
     return params
@@ -112,7 +113,7 @@ if args.skip_fid is not True:
     # Add real images to FID
     logger.info("Adding real images to FID computation...")
     _, _, test_dataset = get_dataset(checkpoint_params['dataset_name'])
-    test_dataloader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
+    test_dataloader = DataLoader(test_dataset, batch_size=checkpoint_params['bs'], shuffle=False)
     for real_batch in test_dataloader:
         real_images, _ = real_batch
         # Normalize real images to [0, 1]
