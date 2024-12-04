@@ -49,6 +49,7 @@ def main():
     logger.info(f"Using beta schedule: {beta_schedule}")
     logger.info(f"Using loss type: {loss_type}")
     logger.info(f"Using learning rate: {lr}")
+    logger.info(f"Using conditional unet: {cond}")
 
     # Set device to cuda if available, set to mps if available else cpu
     device = get_device(T)
