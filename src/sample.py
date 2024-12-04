@@ -1,25 +1,35 @@
 import torch as T
 import matplotlib.pyplot as plt
 import logging
-from utils import get_device
+from utils import get_device, get_dataset
 from argparse import ArgumentParser
 from torchmetrics.image.fid import FrechetInceptionDistance
 from ddpm_model import DdpmLight, DdpmNet
-import argparse
-from utils import get_dataset, get_device
-from train import batch_size
 from torch.utils.data import DataLoader
 import math
+import re
 
+# Function to parse checkpoint filename
+def parse_checkpoint_filename(filename):
+    pattern = r"^(?P<dataset_name>\w+)_unet_dim=(?P<unet_dim>\d+)_beta=(?P<beta_schedule>\w+)_loss=(?P<loss>\w+)_lr=(?P<lr>[0-9.]+)_cond=(?P<cond>\w+)"
+    match = re.match(pattern, filename)
+    if not match:
+        raise ValueError(f"Invalid checkpoint filename format: {filename}")
+    
+    params = match.groupdict()
+    params['unet_dim'] = int(params['unet_dim'])
+    params['lr'] = float(params['lr'])
+    params['cond'] = params['cond'].lower() == 'true'
+    return params
+
+# Argument parser
 parser = ArgumentParser()
 parser.add_argument("checkpoint", type=str, help="Path to the checkpoint file")
-parser.add_argument("--dataset", type=str, choices=["MNIST", "CIFAR10", "Fashion-MNIST"], default="MNIST",
-                    help="Dataset to use for training (MNIST, CIFAR10, Fashion-MNIST)")
 parser.add_argument("--skip_fid", action="store_true", help="Skip the computation of the FID score")
-parser.add_argument("--cond", action="store_true", help="Use conditional diffusion models.")
 
 args = parser.parse_args()
 
+# Logging configuration
 logging.basicConfig(level=logging.INFO,
                     format=('%(filename)s: '
                             '%(levelname)s: '
@@ -30,17 +40,26 @@ logging.basicConfig(level=logging.INFO,
 logger = logging.getLogger(__name__)
 
 # Set device to cuda if available, set to mps if available else cpu
-# device = get_device(T)
 device = get_device(T)
-
 logger.info(f"Using device: {device}")
 
-dataset_name = args.dataset
-cond = args.cond
+# Extract parameters from the checkpoint filename
+try:
+    checkpoint_params = parse_checkpoint_filename(args.checkpoint)
+    logger.info(f"Extracted parameters from checkpoint: {checkpoint_params}")
+except ValueError as e:
+    logger.error(e)
+    exit(1)
 
-# Load the model
-num_channels = 3 if dataset_name == 'CIFAR10' else 1
-model = DdpmNet(unet_dim=32, channels=num_channels, img_size=32, beta_schedule="linear", cond=cond)
+# Initialize the model using extracted parameters
+num_channels = 3 if checkpoint_params['dataset_name'] == 'CIFAR10' else 1
+model = DdpmNet(
+    unet_dim=checkpoint_params['unet_dim'],
+    channels=num_channels,
+    img_size=32,
+    beta_schedule=checkpoint_params['beta_schedule'],
+    cond=checkpoint_params['cond']
+)
 ddpm_light = DdpmLight.load_from_checkpoint(args.checkpoint, ddpmnet=model)
 ddpm_light.eval().to(device)
 
@@ -49,7 +68,7 @@ sample_size = 100
 columnrow = int(math.sqrt(sample_size))
 
 # Generate class labels for conditional sampling
-klass = T.cat([ T.full((columnrow,), i) for i in range(columnrow) ])
+klass = T.cat([T.full((columnrow,), i) for i in range(columnrow)])
 klass = klass.to(device)
 
 logger.info(f"Generating {sample_size} samples...")
@@ -60,7 +79,6 @@ with T.no_grad():
 generated_samples = ((generated_samples + 1) / 2).clamp(0, 1)
 if num_channels == 1:
     generated_samples = generated_samples.repeat(1, 3, 1, 1)  # Convert to RGB 
-
 
 # Visualize generated samples
 logger.info("Saving generated samples...")
@@ -85,7 +103,7 @@ if args.skip_fid is not True:
 
     # Add real images to FID
     logger.info("Adding real images to FID computation...")
-    _, _, test_dataset = get_dataset(dataset_name)
+    _, _, test_dataset = get_dataset(checkpoint_params['dataset_name'])
     test_dataloader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
     for real_batch in test_dataloader:
         real_images, _ = real_batch
@@ -96,7 +114,7 @@ if args.skip_fid is not True:
         # Move real images to CPU
         real_images = real_images.to(dtype=T.float64)
         fid.update(real_images, real=True)
-          # Use only the first batch for simplicity
+        break  # Use only the first batch for simplicity
 
     # Add generated images to FID
     logger.info("Adding generated images to FID computation...")
@@ -105,4 +123,3 @@ if args.skip_fid is not True:
     # Compute FID score
     fid_score = fid.compute()
     logger.info(f"FID Score: {fid_score}")
-
