@@ -12,15 +12,20 @@ import re
 # Function to parse checkpoint filename
 def parse_checkpoint_filename(filename):
     base_filename = filename.split('/')[-1]
-    pattern = r"^(?P<dataset_name>\w+)_unet_dim=(?P<unet_dim>\d+)_beta=(?P<beta_schedule>\w+)_loss=(?P<loss>\w+)_lr=(?P<lr>[0-9.]+)_cond=(?P<cond>\w+)"
+    pattern = (
+        r"^(?P<dataset_name>\w+)_unet_dim=(?P<unet_dim>\d+)_beta=(?P<beta_schedule>\w+)_loss=(?P<loss>\w+)_lr=(?P<lr>[0-9.]+)"
+        r"_cond=(?P<cond>\w+)_epoch=(?P<epoch>\d+)-val_loss=(?P<val_loss>[0-9.]+)\.ckpt$"
+    )
     match = re.match(pattern, base_filename)
     if not match:
-        raise ValueError(f"Invalid checkpoint filename format: {filename}")
+        raise ValueError(f"Invalid checkpoint filename format: {base_filename}")
     
     params = match.groupdict()
     params['unet_dim'] = int(params['unet_dim'])
     params['lr'] = float(params['lr'])
     params['cond'] = params['cond'].lower() == 'true'
+    params['epoch'] = int(params['epoch'])
+    params['val_loss'] = float(params['val_loss'])
     return params
 
 # Argument parser
@@ -97,7 +102,7 @@ for i in range(1, columns * rows + 1):
     else:
         plt.imshow(img)
 
-plt.savefig("sample.png")
+plt.savefig(f'samples/{checkpoint_params['dataset_name']}_{checkpoint_params['cond']}_{checkpoint_params['unet_dim']}_{checkpoint_params['beta_schedule']}_{checkpoint_params['epoch']}_{checkpoint_params['val_loss']}.png')
 
 if args.skip_fid is not True:
     generated_samples = generated_samples.to(dtype=T.float64)
