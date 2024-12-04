@@ -16,6 +16,8 @@ parser.add_argument("checkpoint", type=str, help="Path to the checkpoint file")
 parser.add_argument("--dataset", type=str, choices=["MNIST", "CIFAR10", "Fashion-MNIST"], default="MNIST",
                     help="Dataset to use for training (MNIST, CIFAR10, Fashion-MNIST)")
 parser.add_argument("--skip_fid", action="store_true", help="Skip the computation of the FID score")
+parser.add_argument("--cond", action="store_true", help="Use conditional diffusion models.")
+
 args = parser.parse_args()
 
 logging.basicConfig(level=logging.INFO,
@@ -34,10 +36,11 @@ device = get_device(T)
 logger.info(f"Using device: {device}")
 
 dataset_name = args.dataset
+cond = args.cond
 
 # Load the model
 num_channels = 3 if dataset_name == 'CIFAR10' else 1
-model = DdpmNet(unet_dim=32, channels=num_channels, img_size=32, beta_schedule="linear")
+model = DdpmNet(unet_dim=32, channels=num_channels, img_size=32, beta_schedule="linear", cond=cond)
 ddpm_light = DdpmLight.load_from_checkpoint(args.checkpoint, ddpmnet=model)
 ddpm_light.eval().to(device)
 

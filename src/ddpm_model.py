@@ -43,11 +43,11 @@ def sample_tS(T, size):
 
 
 class DdpmNet(nn.Module):
-    def __init__(self, unet_dim, channels, img_size, beta_schedule, loss_type="smooth_l1_loss", lr=3e-4):
+    def __init__(self, unet_dim, channels, img_size, beta_schedule, loss_type="smooth_l1_loss", lr=3e-4, cond=False):
         super().__init__()
         self.channels = channels
         self.img_size = img_size
-        self.unet = DiffusionUnet(dim=unet_dim, channels=channels)
+        self.unet = DiffusionUnet(dim=unet_dim, channels=channels, cond=cond)
         self.beta_schedule = beta_schedule
         if beta_schedule == "linear":
             self.betas = linear_beta_schedule(1e-4, 0.02, T).to(device)

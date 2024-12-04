@@ -40,8 +40,6 @@ def cosine_beta_schedule(T: int = 1000, s: float = 0.008) -> t.Tensor:
     
     return t.cat((t.tensor([0.0]), t.tensor(betas, dtype=t.float32)))
 
-import torch as t
-
 def sigmoid_beta_schedule(min_beta: float = 1e-4, max_beta: float = 0.02, T: int = 1000, s: float = 0.008) -> t.Tensor:
     """
     Function that returns the beta values for a sigmoid schedule.

@@ -264,7 +264,7 @@ class PreGroupNorm(nn.Module):
 
 
 class DiffusionUnet(nn.Module):
-  def __init__(self, dim, init_dim=None, output_dim=None, dim_mults=(1, 2, 4, 8), channels=3, resnet_block_groups=4):
+  def __init__(self, dim, init_dim=None, output_dim=None, dim_mults=(1, 2, 4, 8), channels=3, resnet_block_groups=4, cond=False):
     super().__init__()
 
     self.channels = channels
@@ -299,9 +299,10 @@ class DiffusionUnet(nn.Module):
           nn.ModuleList(
               [
                   ResnetBlock(dim_in, dim_in, time_emb_dim=time_dim,
-                              class_emb_dim=time_dim, groups=resnet_block_groups),
+                              class_emb_dim=(time_dim if cond else None), 
+                              groups=resnet_block_groups),
                   ResnetBlock(dim_in, dim_in, time_emb_dim=time_dim,
-                              class_emb_dim=time_dim,
+                              class_emb_dim=(time_dim if cond else None),
                               groups=resnet_block_groups),
                   Residual(PreGroupNorm(
                       dim_in, LinearAttention(dim_in))),
@@ -329,11 +330,11 @@ class DiffusionUnet(nn.Module):
                 [
                     ResnetBlock(
                         dim_out + dim_in, dim_out, time_emb_dim=time_dim,
-                        class_emb_dim=time_dim,
+                        class_emb_dim=(time_dim if cond else None),
                         groups=resnet_block_groups),
                     ResnetBlock(
                         dim_out + dim_in, dim_out, time_emb_dim=time_dim,
-                        class_emb_dim=time_dim,
+                        class_emb_dim=(time_dim if cond else None),
                         groups=resnet_block_groups),
                     Residual(PreGroupNorm(
                         dim_out, LinearAttention(dim_out))),

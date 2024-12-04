@@ -34,6 +34,7 @@ def main():
                         help="Loss function to use during training (e.g., smooth_l1, mse, etc.).")
     parser.add_argument("--lr", type=float, default=3e-4, 
                         help="Learning rate for training.")
+    parser.add_argument("--cond", action="store_true", help="Use conditional diffusion models.")
     args = parser.parse_args()
 
     dataset_name = args.dataset
@@ -41,6 +42,7 @@ def main():
     beta_schedule = args.beta_schedule
     loss_type = args.loss
     lr = args.lr
+    cond = args.cond
 
     logger.info(f"Using dataset: {dataset_name}")
     logger.info(f"Using U-Net dimension: {unet_dim}")
@@ -65,7 +67,7 @@ def main():
     num_channels = 3 if dataset_name == 'CIFAR10' else 1
     image_size = 32
     model = DdpmNet(unet_dim=unet_dim, channels=num_channels, img_size=image_size, 
-                    beta_schedule=beta_schedule, loss_type=loss_type, lr=lr)
+                    beta_schedule=beta_schedule, loss_type=loss_type, lr=lr, cond=cond)
     ddpm_light = DdpmLight(model).to(device)
     
     epochs = 200
