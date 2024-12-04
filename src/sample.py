@@ -11,8 +11,9 @@ import re
 
 # Function to parse checkpoint filename
 def parse_checkpoint_filename(filename):
+    base_filename = filename.split('/')[-1]
     pattern = r"^(?P<dataset_name>\w+)_unet_dim=(?P<unet_dim>\d+)_beta=(?P<beta_schedule>\w+)_loss=(?P<loss>\w+)_lr=(?P<lr>[0-9.]+)_cond=(?P<cond>\w+)"
-    match = re.match(pattern, filename)
+    match = re.match(pattern, base_filename)
     if not match:
         raise ValueError(f"Invalid checkpoint filename format: {filename}")
     
