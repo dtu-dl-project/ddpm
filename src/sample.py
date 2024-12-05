@@ -10,23 +10,48 @@ import math
 import re
 
 # Function to parse checkpoint filename
-def parse_checkpoint_filename(filename):
+def parse_checkpoint_filename(filename, default_params=None):
+    # Default values for missing parameters
+    if default_params is None:
+        default_params = {
+            "dataset_name": "MNIST",
+            "unet_dim": 32,
+            "beta_schedule": "linear",
+            "loss": "smooth_l1",
+            "lr": 0.0003,
+            "cond": False,
+            "bs": 32,
+            "epoch": 0,
+            "val_loss": None
+        }
+    
+    # Extract the base filename
     base_filename = filename.split('/')[-1]
+    
+    # Adjusted regex pattern to allow optional parameters
     pattern = (
-        r"^(?P<dataset_name>\w+)_unet_dim=(?P<unet_dim>\d+)_beta=(?P<beta_schedule>\w+)_loss=(?P<loss>\w+)_lr=(?P<lr>[0-9.]+)"
-        r"_cond=(?P<cond>\w+)_bs=(?P<bs>\d+)_epoch=(?P<epoch>\d+)-val_loss=(?P<val_loss>[0-9.]+)\.ckpt$"
+        r"^(?P<dataset_name>\w+)_unet_dim=(?P<unet_dim>\d+)_beta=(?P<beta_schedule>\w+)"
+        r"(?:_loss=(?P<loss>\w+))?(?:_lr=(?P<lr>[0-9.]+))?"
+        r"(?:_cond=(?P<cond>\w+))?(?:_bs=(?P<bs>\d+))?_epoch=(?P<epoch>\d+)-val_loss=(?P<val_loss>[0-9.]+)\.ckpt$"
     )
+    
+    # Match the filename against the pattern
     match = re.match(pattern, base_filename)
     if not match:
         raise ValueError(f"Invalid checkpoint filename format: {base_filename}")
     
+    # Extract parameters
     params = match.groupdict()
+    
+    # Convert extracted parameters and set defaults for missing ones
+    params = {**default_params, **{k: v for k, v in params.items() if v is not None}}
     params['unet_dim'] = int(params['unet_dim'])
-    params['lr'] = float(params['lr'])
-    params['cond'] = params['cond'].lower() == 'true'
-    params['bs'] = int(params['bs'])
+    params['lr'] = float(params['lr']) if params['lr'] is not None else default_params['lr']
+    params['cond'] = params['cond'].lower() == 'true' if isinstance(params['cond'], str) else default_params['cond']
+    params['bs'] = int(params['bs']) if params['bs'] is not None else default_params['bs']
     params['epoch'] = int(params['epoch'])
-    params['val_loss'] = float(params['val_loss'])
+    params['val_loss'] = float(params['val_loss']) if params['val_loss'] is not None else default_params['val_loss']
+    
     return params
 
 # Argument parser
