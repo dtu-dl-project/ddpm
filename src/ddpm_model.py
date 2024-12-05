@@ -1,6 +1,6 @@
 import torch as t
 import torch.nn as nn
-from unet_model_2.unet import DiffusionUnet
+from unet_model_2 import unet, uncond_unet
 import lightning as L
 import torch.nn.functional as F
 from betaschedule import linear_beta_schedule, cosine_beta_schedule, sigmoid_beta_schedule, compute_alphas, compute_alphas_hat
@@ -47,7 +47,11 @@ class DdpmNet(nn.Module):
         super().__init__()
         self.channels = channels
         self.img_size = img_size
-        self.unet = DiffusionUnet(dim=unet_dim, channels=channels, cond=cond)
+        self.cond = cond
+        if cond:
+            self.unet = unet.DiffusionUnet(dim=unet_dim, channels=channels, cond=cond)
+        else: 
+            self.unet = uncond_unet.DiffusionUnet(dim=unet_dim, channels=channels)
         self.beta_schedule = beta_schedule
         if beta_schedule == "linear":
             self.betas = linear_beta_schedule(1e-4, 0.02, T).to(device)
@@ -62,7 +66,10 @@ class DdpmNet(nn.Module):
         self.alphas = compute_alphas(self.betas)
 
     def forward(self, x, t, c):
-        return self.unet(x, t, c)
+        if self.cond:
+            return self.unet(x, t, c)
+        else:
+            return self.unet(x, t)
 
 
 class DdpmLight(L.LightningModule):
