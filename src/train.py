@@ -35,6 +35,8 @@ def main():
     parser.add_argument("--lr", type=float, default=3e-4, 
                         help="Learning rate for training.")
     parser.add_argument("--cond", action="store_true", help="Use conditional diffusion models.")
+    parser.add_argument("--scheduler", action="store_true", help="Use cosine scheduler.")
+    parser.add_argument("--epochs", type=int, default=200, help="Number of epochs to train the model.")
     args = parser.parse_args()
 
     dataset_name = args.dataset
@@ -43,6 +45,8 @@ def main():
     loss_type = args.loss
     lr = args.lr
     cond = args.cond
+    epochs = args.epochs
+    use_scheduler = args.scheduler
 
     logger.info(f"Using dataset: {dataset_name}")
     logger.info(f"Using U-Net dimension: {unet_dim}")
@@ -69,10 +73,8 @@ def main():
     image_size = 32
     model = DdpmNet(unet_dim=unet_dim, channels=num_channels, img_size=image_size, 
                     beta_schedule=beta_schedule, loss_type=loss_type, lr=lr, cond=cond)
-    ddpm_light = DdpmLight(model).to(device)
+    ddpm_light = DdpmLight(model, use_scheduler=use_scheduler, len_train_set=len(train_dataloader), epochs=epochs).to(device)
     
-    epochs = 200
-
     checkpoint_callback = ModelCheckpoint(
         dirpath="ckpt", 
         save_top_k=3, 

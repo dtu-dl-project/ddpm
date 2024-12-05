@@ -5,6 +5,7 @@ import lightning as L
 import torch.nn.functional as F
 from betaschedule import linear_beta_schedule, cosine_beta_schedule, sigmoid_beta_schedule, compute_alphas, compute_alphas_hat
 from utils import get_device
+from transformers import get_cosine_schedule_with_warmup
 import logging
 
 logger = logging.getLogger(__name__)
@@ -73,9 +74,12 @@ class DdpmNet(nn.Module):
 
 
 class DdpmLight(L.LightningModule):
-    def __init__(self, ddpmnet):
+    def __init__(self, ddpmnet, use_scheduler=False, len_train_set=0, epochs=0):
         super().__init__()
         self.ddpmnet = ddpmnet
+        self.use_scheduler = use_scheduler  
+        self.len_train_set = len_train_set
+        self.epochs = epochs
 
 
     def sample(self, count, klass):
@@ -146,4 +150,21 @@ class DdpmLight(L.LightningModule):
         return loss
 
     def configure_optimizers(self):
-        return t.optim.Adam(self.parameters(), lr=self.ddpmnet.lr)
+        optimizer = t.optim.Adam(self.parameters(), lr=self.ddpmnet.lr)
+
+        if self.use_scheduler:
+            # Create the learning rate scheduler
+            lr_scheduler = get_cosine_schedule_with_warmup(
+                optimizer=optimizer,
+                num_warmup_steps=0,  # Set to the number of steps for warmup if desired
+                num_training_steps=(self.len_train_set * self.epochs),
+            )
+            # Return both the optimizer and the scheduler
+            return [optimizer], [lr_scheduler]
+        else:
+            return optimizer
+
+    def training_epoch_end(self, outputs):
+        # Optionally log learning rate at the end of each epoch
+        lr = self.optimizers().param_groups[0]['lr']
+        logger.info(f"Learning rate at epoch end: {lr}")
