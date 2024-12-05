@@ -128,8 +128,6 @@ for i in range(1, columns * rows + 1):
     else:
         plt.imshow(img)
 
-plt.savefig(f"samples/{checkpoint_params['dataset_name']}_{checkpoint_params['cond']}_{checkpoint_params['unet_dim']}_{checkpoint_params['beta_schedule']}_{checkpoint_params['epoch']}_{checkpoint_params['val_loss']}.png")
-
 if args.skip_fid is not True:
     generated_samples = generated_samples.to(dtype=T.float64)
     # Initialize FID metric
@@ -157,3 +155,9 @@ if args.skip_fid is not True:
     # Compute FID score
     fid_score = fid.compute()
     logger.info(f"FID Score: {fid_score}")
+
+filename = f"samples/{checkpoint_params['dataset_name']}_{checkpoint_params['cond']}_{checkpoint_params['unet_dim']}_{checkpoint_params['beta_schedule']}_{checkpoint_params['epoch']}_{checkpoint_params['val_loss']}"
+if args.skip_fid is not True:
+    filename += f"_fid={fid_score:.2f}"
+filename += ".png"
+plt.savefig()
