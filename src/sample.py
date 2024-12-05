@@ -160,4 +160,4 @@ filename = f"samples/{checkpoint_params['dataset_name']}_{checkpoint_params['con
 if args.skip_fid is not True:
     filename += f"_fid={fid_score:.2f}"
 filename += ".png"
-plt.savefig()
+plt.savefig(filename)
