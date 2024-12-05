@@ -16,7 +16,7 @@ def linear_beta_schedule(min_beta: float = 1e-4, max_beta: float = 0.02, T: int 
     """
     return t.cat((t.tensor([0.0]), t.linspace(min_beta, max_beta, T, dtype=t.float32)))
 
-def cosine_beta_schedule_2(T: int = 1000, s: float = 0.008) -> t.Tensor:
+def cosine_beta_schedule(T: int = 1000, s: float = 0.008) -> t.Tensor:
     timesteps = t.linspace(0, T, T + 1, dtype=t.float32)
     alphas_bar = t.cos((timesteps / T + s) / (1 + s) * t.pi / 2) ** 2
     alphas_bar = alphas_bar / alphas_bar[0]  # Normalize alphas_bar to start at 1
