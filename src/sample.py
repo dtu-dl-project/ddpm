@@ -29,7 +29,7 @@ def parse_checkpoint_filename(filename, default_params=None):
     base_filename = filename.split('/')[-1]
     
     # Adjusted regex pattern to allow optional parameters
-    regex_pattern = (
+    pattern = (
         r"^(?P<dataset_name>\w+)_unet_dim=(?P<unet_dim>\d+)_beta=(?P<beta_schedule>\w+)"
         r"(?:_loss=(?P<loss>[a-zA-Z0-9_]+))?"
         r"(?:_lr=(?P<lr>[0-9.e-]+))?"
