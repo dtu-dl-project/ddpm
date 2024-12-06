@@ -53,6 +53,7 @@ class DdpmNet(nn.Module):
             self.unet = unet.DiffusionUnet(dim=unet_dim, channels=channels, cond=cond)
         else: 
             self.unet = uncond_unet.DiffusionUnet(dim=unet_dim, channels=channels)
+            #, dim_mults=(1,2,2,2), resnet_block_groups=2)
         self.beta_schedule = beta_schedule
         if beta_schedule == "linear":
             self.betas = linear_beta_schedule(1e-4, 0.02, T).to(device)
@@ -156,7 +157,7 @@ class DdpmLight(L.LightningModule):
             # Create the learning rate scheduler
             lr_scheduler = get_cosine_schedule_with_warmup(
                 optimizer=optimizer,
-                num_warmup_steps=0,  # Set to the number of steps for warmup if desired
+                num_warmup_steps=100,  # Set to the number of steps for warmup if desired
                 num_training_steps=(self.len_train_set * self.epochs),
             )
             # Return both the optimizer and the scheduler
@@ -164,7 +165,7 @@ class DdpmLight(L.LightningModule):
         else:
             return optimizer
 
-    def training_epoch_end(self, outputs):
+    def on_train_epoch_end(self):
         # Optionally log learning rate at the end of each epoch
         lr = self.optimizers().param_groups[0]['lr']
         logger.info(f"Learning rate at epoch end: {lr}")

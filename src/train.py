@@ -19,8 +19,6 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
-batch_size = 32
-
 def main():
     parser = argparse.ArgumentParser(description="Train DDPM with different datasets and beta schedules.")
     parser.add_argument("--dataset", type=str, choices=["MNIST", "CIFAR10", "Fashion-MNIST"], default="MNIST",
@@ -37,6 +35,7 @@ def main():
     parser.add_argument("--cond", action="store_true", help="Use conditional diffusion models.")
     parser.add_argument("--scheduler", action="store_true", help="Use cosine scheduler.")
     parser.add_argument("--epochs", type=int, default=200, help="Number of epochs to train the model.")
+    parser.add_argument("--bs", type=int, default=32, help="Batch size to train the model.")
     args = parser.parse_args()
 
     dataset_name = args.dataset
@@ -47,6 +46,7 @@ def main():
     cond = args.cond
     epochs = args.epochs
     use_scheduler = args.scheduler
+    batch_size = args.bs 
 
     logger.info(f"Using dataset: {dataset_name}")
     logger.info(f"Using U-Net dimension: {unet_dim}")
@@ -54,6 +54,8 @@ def main():
     logger.info(f"Using loss type: {loss_type}")
     logger.info(f"Using learning rate: {lr}")
     logger.info(f"Using conditional unet: {cond}")
+    logger.info(f"Using batch size: {batch_size}")
+    logger.info(f"Using scheduler: {use_scheduler}")
 
     # Set device to cuda if available, set to mps if available else cpu
     device = get_device(T)
