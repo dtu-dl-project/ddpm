@@ -22,7 +22,7 @@ def cosine_beta_schedule(T: int = 1000, s: float = 0.008) -> t.Tensor:
     alphas_bar = alphas_bar / alphas_bar[0]  # Normalize alphas_bar to start at 1
     betas = 1.0 - alphas_bar[1:] / alphas_bar[:-1]
     betas = t.clamp(betas, max=0.999)  # Ensure max beta is 0.999
-    return t.cat((t.tensor([0.0]), t.tensor(betas, dtype=t.float32)))
+    return t.cat((t.tensor([0.0]), betas))
 
 def sigmoid_beta_schedule(min_beta: float = 1e-4, max_beta: float = 0.02, T: int = 1000, s: float = 0.008) -> t.Tensor:
     """
