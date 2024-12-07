@@ -62,6 +62,7 @@ def parse_checkpoint_filename(filename, default_params=None):
 parser = ArgumentParser()
 parser.add_argument("checkpoint", type=str, help="Path to the checkpoint file")
 parser.add_argument("--num_samples", type=int, default=100, help="Number of samples to generate")
+parser.add_argument("--bs", type=int, default=100, help="Batch size to generate samples")
 parser.add_argument("--skip_fid", action="store_true", help="Skip the computation of the FID score")
 parser.add_argument("--skip_plot", action="store_true", help="Skip the plotting of the generated samples")
 
@@ -105,7 +106,7 @@ ddpm_light.eval().to(device)
 
 # Generate samples
 sample_size = args.num_samples
-batch_size = 100
+batch_size = args.bs
 columnrow = int(math.sqrt(batch_size))
 
 # Generate class labels for conditional sampling
