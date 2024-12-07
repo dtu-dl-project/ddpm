@@ -93,6 +93,20 @@ except ValueError as e:
 
 # Initialize the model using extracted parameters
 num_channels = 3 if checkpoint_params['dataset_name'] == 'CIFAR10' else 1
+
+if checkpoint_params['dataset_name'] == 'CIFAR10' and not checkpoint_params['cond']:
+    dim_mults = (1,2,2,2)
+    resnet_block_groups = 2
+    dropout = 0.1
+    horizontal_flips = True
+    dim_att_head = 16
+else:
+    dim_mults = (1,2,4,8)
+    resnet_block_groups = 4
+    dropout = 0.0
+    horizontal_flips = False
+    dim_att_head = 32
+
 model = DdpmNet(
     unet_dim=checkpoint_params['unet_dim'],
     channels=num_channels,
@@ -100,8 +114,14 @@ model = DdpmNet(
     beta_schedule=checkpoint_params['beta_schedule'],
     loss_type=checkpoint_params['loss'],
     lr=checkpoint_params['lr'],
-    cond=checkpoint_params['cond']
+    cond=checkpoint_params['cond'],
+    dim_mults=dim_mults,
+    resnet_block_groups=resnet_block_groups,
+    dropout=dropout,
+    horizontal_flips=horizontal_flips,
+    dim_att_head=dim_att_head
 )
+
 ddpm_light = DdpmLight.load_from_checkpoint(args.checkpoint, ddpmnet=model)
 ddpm_light.eval().to(device)
 
