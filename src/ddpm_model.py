@@ -46,6 +46,7 @@ def sample_tS(T, size):
 
 class DdpmNet(nn.Module):
     def __init__(self, unet_dim, channels, img_size, beta_schedule, loss_type="smooth_l1_loss", lr=3e-4, cond=False, dim_mults=(1,2,4,8), resnet_block_groups=4, dropout=0.0, horizontal_flips=False, dim_att_head=32):
+        super().__init__()
         self.channels = channels
         self.img_size = img_size
         self.cond = cond
@@ -88,7 +89,7 @@ class DdpmLight(L.LightningModule):
         x = t.randn(count, self.ddpmnet.channels, self.ddpmnet.img_size, self.ddpmnet.img_size).to(self.device)  # Use torch.randn for consistency
         for int_i in reversed(range(T)):
             x = self.forward_sample(x, int_i + 1, klass)
-            logger.info(f"Sampled timestep {int_i + 1}")
+            # logger.info(f"Sampled timestep {int_i + 1}")
         return x
 
     def forward_sample(self, x, int_i, klass):

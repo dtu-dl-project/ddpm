@@ -134,7 +134,6 @@ if args.skip_fid is False:
 
 with T.no_grad():
     for i in tqdm(range(sample_size // batch_size), desc="Generating Samples"):
-        logger.info(f"Generating samples {i * batch_size} to {(i + 1) * batch_size}")
         generated_samples = ddpm_light.sample(batch_size, klass).view(batch_size, num_channels, 32, 32).to(device)
 
         # Normalize generated samples to [0, 1]
