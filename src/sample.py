@@ -5,7 +5,8 @@ from utils import get_device, get_dataset
 from argparse import ArgumentParser
 from torchmetrics.image.fid import FrechetInceptionDistance
 from ddpm_model import DdpmLight, DdpmNet
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, Subset
+from tqdm import tqdm
 import math
 import re
 
@@ -115,12 +116,13 @@ klass = klass.to(device)
 fid = FrechetInceptionDistance(feature=2048, normalize=True, reset_real_features=False, input_img_size=(3,32,32)).to(device)
 fid.set_dtype(T.float64)
 
-# Add real images to FID
-logger.info("Adding real images to FID computation...")
+# Add real images to FID computation
 if args.skip_fid is False:
     train_dataset, _, _ = get_dataset(checkpoint_params['dataset_name'])
-    train_dataloader = DataLoader(train_dataset, batch_size=checkpoint_params['bs'], shuffle=False)
-    for real_batch in train_dataloader:
+    subset_indices = list(range(sample_size))  # Indices for the subset
+    subset_dataset = Subset(train_dataset, subset_indices)
+    train_dataloader = DataLoader(subset_dataset, batch_size=checkpoint_params['bs'], shuffle=False)
+    for real_batch in tqdm(train_dataloader, desc="Adding real images to FID computation"):
         real_images, _ = real_batch
         # Normalize real images to [0, 1]
         real_images = ((real_images + 1) / 2).clamp(0, 1).to(device)
@@ -131,7 +133,7 @@ if args.skip_fid is False:
         fid.update(real_images, real=True)
 
 with T.no_grad():
-    for i in range(sample_size // batch_size):
+    for i in tqdm(range(sample_size // batch_size), desc="Generating Samples"):
         logger.info(f"Generating samples {i * batch_size} to {(i + 1) * batch_size}")
         generated_samples = ddpm_light.sample(batch_size, klass).view(batch_size, num_channels, 32, 32).to(device)
 
