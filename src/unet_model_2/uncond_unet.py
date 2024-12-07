@@ -101,11 +101,12 @@ class WeightStandardizedConv2d(nn.Conv2d):
 
 
 class Block(nn.Module):
-  def __init__(self, in_channels, out_channels, groups=8):
+  def __init__(self, in_channels, out_channels, groups=8, dropout=0.0):
     super().__init__()
     self.proj = WeightStandardizedConv2d(in_channels, out_channels, 3, padding=1)
     self.norm = nn.GroupNorm(groups, out_channels)
     self.act = nn.SiLU()
+    self.dropout = nn.Dropout(dropout)
 
   def forward(self, x, scale_shift=None):
     x = self.proj(x)
@@ -116,10 +117,10 @@ class Block(nn.Module):
       x = x * (scale + 1) + shift
 
     x = self.act(x)
-    return x
+    return self.dropout(x)
 
 class ResnetBlock(nn.Module):
-  def __init__(self, in_channels, out_channels, time_emb_dim=None, groups=8):
+  def __init__(self, in_channels, out_channels, time_emb_dim=None, groups=8, dropout=0.0):
     super().__init__()
     if time_emb_dim is not None:
       self.mlp = nn.Sequential(
@@ -129,8 +130,8 @@ class ResnetBlock(nn.Module):
     else:
       self.mlp = None
 
-    self.block1 = Block(in_channels, out_channels, groups)
-    self.block2 = Block(out_channels, out_channels, groups)
+    self.block1 = Block(in_channels, out_channels, groups, dropout)
+    self.block2 = Block(out_channels, out_channels, groups, dropout)
     if in_channels == out_channels:
       self.res_conv = nn.Identity()
     else:
@@ -212,7 +213,7 @@ class PreGroupNorm(nn.Module):
     return x
      
 class DiffusionUnet(nn.Module):
-  def __init__(self, dim, init_dim=None, output_dim=None, dim_mults=(1, 2, 4, 8), channels=3, resnet_block_groups=4):
+  def __init__(self, dim, init_dim=None, output_dim=None, dim_mults=(1, 2, 4, 8), channels=3, resnet_block_groups=4, dropout=0.0, dim_att_head=32):
     super().__init__()
 
     self.channels = channels
@@ -237,9 +238,9 @@ class DiffusionUnet(nn.Module):
       self.down_layers.append(
           nn.ModuleList(
               [
-                  ResnetBlock(dim_in, dim_in, time_emb_dim=time_dim, groups=resnet_block_groups),
-                  ResnetBlock(dim_in, dim_in, time_emb_dim=time_dim, groups=resnet_block_groups),
-                  Residual(PreGroupNorm(dim_in, LinearAttention(dim_in))),
+                  ResnetBlock(dim_in, dim_in, time_emb_dim=time_dim, groups=resnet_block_groups, dropout=dropout),
+                  ResnetBlock(dim_in, dim_in, time_emb_dim=time_dim, groups=resnet_block_groups, dropout=dropout),
+                  Residual(PreGroupNorm(dim_in, LinearAttention(dim_in, dim_head=dim_att_head))),
                   downsample(dim_in, dim_out) if not is_last else nn.Conv2d(dim_in, dim_out, 3, padding=1)
               ]
           )
@@ -247,9 +248,9 @@ class DiffusionUnet(nn.Module):
 
       # middle layers
       mid_dim = dims[-1]
-      self.mid_block1 = ResnetBlock(mid_dim, mid_dim, time_emb_dim=time_dim, groups=resnet_block_groups)
-      self.mid_attention = Residual(PreGroupNorm(mid_dim, Attention(mid_dim)))
-      self.mid_block2 = ResnetBlock(mid_dim, mid_dim, time_emb_dim=time_dim, groups=resnet_block_groups)
+      self.mid_block1 = ResnetBlock(mid_dim, mid_dim, time_emb_dim=time_dim, groups=resnet_block_groups, dropout=dropout)
+      self.mid_attention = Residual(PreGroupNorm(mid_dim, Attention(mid_dim, dim_head=dim_att_head)))
+      self.mid_block2 = ResnetBlock(mid_dim, mid_dim, time_emb_dim=time_dim, groups=resnet_block_groups, dropout=dropout)
 
       # up layers
       self.up_layers = nn.ModuleList([])
@@ -258,16 +259,16 @@ class DiffusionUnet(nn.Module):
         self.up_layers.append(
             nn.ModuleList(
                 [
-                    ResnetBlock(dim_out + dim_in, dim_out, time_emb_dim=time_dim, groups=resnet_block_groups),
-                    ResnetBlock(dim_out + dim_in, dim_out, time_emb_dim=time_dim, groups=resnet_block_groups),
-                    Residual(PreGroupNorm(dim_out, LinearAttention(dim_out))),
+                    ResnetBlock(dim_out + dim_in, dim_out, time_emb_dim=time_dim, groups=resnet_block_groups, dropout=dropout),
+                    ResnetBlock(dim_out + dim_in, dim_out, time_emb_dim=time_dim, groups=resnet_block_groups, dropout=dropout),
+                    Residual(PreGroupNorm(dim_out, LinearAttention(dim_out, dim_head=dim_att_head))),
                     upsample(dim_out, dim_in) if not is_last else nn.Conv2d(dim_out, dim_in, 3, padding=1)
                 ]
             )
         )
 
         self.output_dim = output_dim if output_dim is not None else channels
-        self.final_res_block = ResnetBlock(2 * dim, dim, time_emb_dim=time_dim, groups=resnet_block_groups)
+        self.final_res_block = ResnetBlock(2 * dim, dim, time_emb_dim=time_dim, groups=resnet_block_groups, dropout=dropout)
         self.final_conv = nn.Conv2d(dim, self.output_dim, 1)
 
   def forward(self, x, time):

@@ -6,6 +6,7 @@ import torch.nn.functional as F
 from betaschedule import linear_beta_schedule, cosine_beta_schedule, sigmoid_beta_schedule, compute_alphas, compute_alphas_hat
 from utils import get_device
 from transformers import get_cosine_schedule_with_warmup
+from torchvision.transforms import RandomHorizontalFlip
 import logging
 
 logger = logging.getLogger(__name__)
@@ -44,16 +45,14 @@ def sample_tS(T, size):
 
 
 class DdpmNet(nn.Module):
-    def __init__(self, unet_dim, channels, img_size, beta_schedule, loss_type="smooth_l1_loss", lr=3e-4, cond=False):
-        super().__init__()
+    def __init__(self, unet_dim, channels, img_size, beta_schedule, loss_type="smooth_l1_loss", lr=3e-4, cond=False, dim_mults=(1,2,4,8), resnet_block_groups=4, dropout=0.0, horizontal_flips=False, dim_att_head=32):
         self.channels = channels
         self.img_size = img_size
         self.cond = cond
         if cond:
             self.unet = unet.DiffusionUnet(dim=unet_dim, channels=channels, cond=cond)
         else: 
-            self.unet = uncond_unet.DiffusionUnet(dim=unet_dim, channels=channels)
-            #, dim_mults=(1,2,2,2), resnet_block_groups=2)
+            self.unet = uncond_unet.DiffusionUnet(dim=unet_dim, channels=channels, dim_mults=dim_mults, resnet_block_groups=resnet_block_groups, dropout=dropout, dim_att_head=dim_att_head)
         self.beta_schedule = beta_schedule
         if beta_schedule == "linear":
             self.betas = linear_beta_schedule(1e-4, 0.02, T).to(device)
@@ -63,6 +62,7 @@ class DdpmNet(nn.Module):
             self.betas = sigmoid_beta_schedule(T=T).to(device)
         self.loss_type = loss_type
         self.lr = lr
+        self.horizontal_flips = horizontal_flips
 
         self.alphas_hat = compute_alphas_hat(self.betas)
         self.alphas = compute_alphas(self.betas)
@@ -81,6 +81,7 @@ class DdpmLight(L.LightningModule):
         self.use_scheduler = use_scheduler  
         self.len_train_set = len_train_set
         self.epochs = epochs
+        self.rand_horizontal_flip = RandomHorizontalFlip(p=0.5)
 
 
     def sample(self, count, klass):
@@ -120,6 +121,9 @@ class DdpmLight(L.LightningModule):
         x, y = batch
 
         x = x.to(self.device)
+
+        if self.ddpmnet.horizontal_flips:
+            x = self.rand_horizontal_flip(x)
 
         bs = x.size(0)
 

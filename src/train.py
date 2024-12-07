@@ -73,9 +73,38 @@ def main():
     # Pass the U-Net dimension, beta scheduler, loss type, and learning rate to the DdpmNet constructor
     num_channels = 3 if dataset_name == 'CIFAR10' else 1
     image_size = 32
-    model = DdpmNet(unet_dim=unet_dim, channels=num_channels, img_size=image_size, 
-                    beta_schedule=beta_schedule, loss_type=loss_type, lr=lr, cond=cond)
-    ddpm_light = DdpmLight(model, use_scheduler=use_scheduler, len_train_set=len(train_dataloader), epochs=epochs).to(device)
+
+    if dataset_name == "CIFAR10" and not cond:
+        # Using the same settings of the original paper
+        dim_mults = (1,2,2,2)
+        resnet_block_groups = 2
+        dropout = 0.1
+        horizontal_flips = True
+        dim_att_head = 16
+    else:
+        dim_mults = (1,2,4,8)
+        resnet_block_groups = 4
+        dropout = 0.0
+        horizontal_flips = False
+        dim_att_head = 32
+
+    model = DdpmNet(unet_dim=unet_dim, 
+                    channels=num_channels, 
+                    img_size=image_size, 
+                    beta_schedule=beta_schedule, 
+                    loss_type=loss_type, 
+                    lr=lr, 
+                    cond=cond,
+                    dim_mults=dim_mults,
+                    resnet_block_groups=resnet_block_groups,
+                    dropout=dropout,
+                    horizontal_flips=horizontal_flips,
+                    dim_att_head=dim_att_head)
+    
+    ddpm_light = DdpmLight(model, 
+                           use_scheduler=use_scheduler, 
+                           len_train_set=len(train_dataloader), 
+                           epochs=epochs).to(device)
     
     checkpoint_callback = ModelCheckpoint(
         dirpath="ckpt", 
