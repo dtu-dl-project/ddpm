@@ -9,6 +9,7 @@ from torch.utils.data import DataLoader, Subset
 from tqdm import tqdm
 import math
 import re
+import os
 
 # Function to parse checkpoint filename
 def parse_checkpoint_filename(filename, default_params=None):
@@ -151,6 +152,19 @@ with T.no_grad():
 # Compute FID score
 fid_score = fid.compute()
 logger.info(f"FID Score: {fid_score}")     
+
+# Define the file and the header
+fid_score_file = "FID_scores.txt"
+header = f"{'Checkpoint':<50} {'Samples':<10} {'FID':<10}\n"
+
+# Check if the file exists and add a header if it's empty
+if not os.path.exists(fid_score_file) or os.path.getsize(fid_score_file) == 0:
+    with open(fid_score_file, "w") as f:
+        f.write(header)
+
+# Append the FID score to the file with aligned columns
+with open(fid_score_file, "a") as f:
+    f.write(f"{args.checkpoint:<50} {sample_size:<10} {fid_score:<10.6f}\n")
 
 # Visualize generated samples
 if args.skip_plot is False:
