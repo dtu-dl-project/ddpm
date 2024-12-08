@@ -160,6 +160,20 @@ plt.subplots_adjust(
         wspace=0.2,
         hspace=0.2)
 
-filename = f"samples_poster/{checkpoint_params['dataset_name']}_{checkpoint_params['cond']}_{checkpoint_params['unet_dim']}_{checkpoint_params['beta_schedule']}_{checkpoint_params['epoch']}_{checkpoint_params['val_loss']}"
-filename += ".png"
+import os
+
+# Initial filename without extension
+base_filename = f"samples/poster_{checkpoint_params['dataset_name']}_{checkpoint_params['cond']}_{checkpoint_params['beta_schedule']}"
+
+# Add the .png extension
+filename = f"{base_filename}.png"
+
+# Check if the file exists, and add a progressive number if it does
+counter = 1
+while os.path.exists(filename):
+    filename = f"{base_filename}_{counter}.png"
+    counter += 1
+
+# Save the figure
 plt.savefig(filename)
+
