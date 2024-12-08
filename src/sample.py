@@ -94,7 +94,7 @@ except ValueError as e:
 # Initialize the model using extracted parameters
 num_channels = 3 if checkpoint_params['dataset_name'] == 'CIFAR10' else 1
 
-if checkpoint_params['dataset_name'] == 'CIFAR10' and not checkpoint_params['cond']:
+if checkpoint_params['dataset_name'] == 'CIFAR10' and checkpoint_params['unet_dim'] == 128:
     dim_mults = (1,2,2,2)
     resnet_block_groups = 2
     dropout = 0.1
@@ -128,10 +128,10 @@ ddpm_light.eval().to(device)
 # Generate samples
 sample_size = args.num_samples
 batch_size = args.bs
-columnrow = int(math.sqrt(batch_size))
+columnrow = batch_size // 10
 
 # Generate class labels for conditional sampling
-klass = T.cat([T.full((columnrow,), i) for i in range(columnrow)])
+klass = T.cat([T.full((columnrow,), i) for i in range(10)])
 klass = klass.to(device)
 
 # Initialize FID metric
