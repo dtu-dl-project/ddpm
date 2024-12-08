@@ -74,7 +74,7 @@ def main():
     num_channels = 3 if dataset_name == 'CIFAR10' else 1
     image_size = 32
 
-    if dataset_name == "CIFAR10" and not cond:
+    if dataset_name == "CIFAR10":
         # Using the same settings of the original paper
         dim_mults = (1,2,2,2)
         resnet_block_groups = 2
@@ -87,6 +87,12 @@ def main():
         dropout = 0.0
         horizontal_flips = False
         dim_att_head = 32
+
+    logger.info(f"Using dim mults: {dim_mults}")
+    logger.info(f"Using resnet block groups: {resnet_block_groups}")
+    logger.info(f"Using dropout: {dropout}")
+    logger.info(f"Using horizontal flips: {horizontal_flips}")
+    logger.info(f"Using dim att head: {dim_att_head}")
 
     model = DdpmNet(unet_dim=unet_dim, 
                     channels=num_channels, 

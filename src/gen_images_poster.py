@@ -151,6 +151,15 @@ for i in range(1, columns * rows + 1):
     else:
         plt.imshow(img)
 
+padding = 0.005
+plt.subplots_adjust(
+        left=padding, 
+        right=1-padding, 
+        top=1-padding, 
+        bottom=padding,
+        wspace=0.2,
+        hspace=0.2)
+
 filename = f"samples_poster/{checkpoint_params['dataset_name']}_{checkpoint_params['cond']}_{checkpoint_params['unet_dim']}_{checkpoint_params['beta_schedule']}_{checkpoint_params['epoch']}_{checkpoint_params['val_loss']}"
 filename += ".png"
 plt.savefig(filename)
