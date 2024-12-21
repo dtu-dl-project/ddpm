@@ -1,0 +1,11 @@
+Fashion-MNIST_unet_dim=32_beta=cosine_loss=smooth_l1_lr=0.0003_cond=True_bs=32_epoch=198-val_loss=0.01823.ckpt filter=lfs diff=lfs merge=lfs -text
+Fashion-MNIST_unet_dim=32_beta=linear_loss=smooth_l1_lr=0.0003_cond=False_bs=32_epoch=161-val_loss=0.00991.ckpt filter=lfs diff=lfs merge=lfs -text
+MNIST_unet_dim=32_beta=cosine_loss=smooth_l1_lr=0.0003_cond=False_bs=32_epoch=171-val_loss=0.01110.ckpt filter=lfs diff=lfs merge=lfs -text
+MNIST_unet_dim=32_beta=linear_loss=smooth_l1_lr=0.0003_cond=False_bs=32_epoch=160-val_loss=0.00636.ckpt filter=lfs diff=lfs merge=lfs -text
+CIFAR10_unet_dim=128_beta=cosine_loss=smooth_l1_lr=0.0002_cond=False_bs=128_epoch=372-val_loss=0.02533.ckpt filter=lfs diff=lfs merge=lfs -text
+CIFAR10_unet_dim=128_beta=linear_loss=smooth_l1_lr=0.0002_cond=False_bs=128_epoch=244-val_loss=0.01319.ckpt filter=lfs diff=lfs merge=lfs -text
+CIFAR10_unet_dim=32_beta=linear_loss=smooth_l1_lr=0.0003_cond=True_bs=32_epoch=174-val_loss=0.01390.ckpt filter=lfs diff=lfs merge=lfs -text
+Fashion-MNIST_unet_dim=32_beta=cosine_loss=smooth_l1_lr=0.0003_cond=False_bs=32_epoch=134-val_loss=0.01886.ckpt filter=lfs diff=lfs merge=lfs -text
+Fashion-MNIST_unet_dim=32_beta=linear_loss=smooth_l1_lr=0.0003_cond=True_bs=32_epoch=105-val_loss=0.00991.ckpt filter=lfs diff=lfs merge=lfs -text
+MNIST_unet_dim=32_beta=cosine_loss=smooth_l1_lr=0.0003_cond=True_bs=32_epoch=157-val_loss=0.01103.ckpt filter=lfs diff=lfs merge=lfs -text
+MNIST_unet_dim=32_beta=linear_loss=smooth_l1_lr=0.0003_cond=True_bs=32_epoch=183-val_loss=0.00607.ckpt filter=lfs diff=lfs merge=lfs -text
